@@ -1,8 +1,8 @@
 require("dotenv").config();
 const puppeteer = require("puppeteer");
 
-const DATE = 20;
-const INTERVAL_IN_MINUTES = 30;
+const DATE = new Date().getDate(); // update to 1-30 to select other day of month
+const INTERVAL_IN_MINUTES = 30; // how often to check
 // ! see TIMES below to set which classes to look for
 
 const findOpenTime = async () => {
@@ -75,11 +75,11 @@ const findOpenTime = async () => {
   await page.click('button[data-test-button="reserve"]');
   await page.waitForNetworkIdle();
 
+  console.log(`> booked class: ${openLinks[0][0]}`);
+
   // bye
   await browser.close();
-
-  // exit process
-  throw new Error("Booked class: ", openLinks[0][0]);
+  process.exit();
 };
 
 findOpenTime();
