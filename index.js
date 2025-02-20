@@ -2,31 +2,35 @@ require("dotenv").config();
 const puppeteer = require("puppeteer");
 
 const DATE = 20;
-const INTERVAL = 30;
+const INTERVAL_IN_MINUTES = 30;
+// ! see TIMES below to set which classes to look for
 
 const findOpenTime = async () => {
   console.log("----------------");
   console.log(`> ${new Date()}`);
   console.log(`> checking for open times`);
 
+  // initial page load
   const browser = await puppeteer.launch({ headless: true });
   const page = await browser.newPage();
-
   await page.goto(
     "https://embracenorth.marianaiframes.com/iframe/schedule/daily/48541"
   );
-
   await page.waitForNetworkIdle();
 
-  // await page.click(`button[data-test-date-button="${DATE}"]`);
+  // date
+  if (DATE !== new Date().getDate()) {
+    await page.click(`button[data-test-date-button="${DATE}"]`);
+  }
 
+  // cookies
   await page.waitForSelector(`button[data-test-button="accept-all-cookies"]`);
-
   await page.click('button[data-test-button="accept-all-cookies"]');
 
+  // find open times
   const table = await page.$("table");
-
   const openLinks = await table.evaluate(() => {
+    // ! times in order of preference
     const TIMES = ["6:45 PM", "7:00 PM", "7:15 PM"];
 
     const trsWithOpenTimes = [...document.querySelectorAll("tr")].filter((tr) =>
@@ -42,16 +46,20 @@ const findOpenTime = async () => {
           tr.querySelector("td a").href,
         ];
       })
-      .filter(([time]) => TIMES.includes(time));
+      .filter(([time]) => TIMES.includes(time))
+      .sort(([timeA], [timeB]) => TIMES.indexOf(timeA) - TIMES.indexOf(timeB));
   });
 
   if (openLinks.length === 0) {
-    console.log(`> no open times found. next check in ${INTERVAL} minutes`);
+    console.log(
+      `> no open times found. next check in ${INTERVAL_IN_MINUTES} minutes`
+    );
     return;
   } else {
     console.log(`> open times found: ${openLinks.map((l) => l[0]).join(", ")}`);
   }
 
+  // go to open class
   await page.goto(openLinks[0][1]);
 
   // login
@@ -63,15 +71,14 @@ const findOpenTime = async () => {
   await page.click('button[type="submit"]');
 
   // confirm
-
   await page.waitForSelector('button[data-test-button="reserve"]');
-
   await page.click('button[data-test-button="reserve"]');
-
   await page.waitForNetworkIdle();
 
+  // bye
   await browser.close();
 
+  // exit process
   throw new Error("Booked class: ", openLinks[0][0]);
 };
 
