@@ -1,66 +1,71 @@
 require("dotenv").config();
 const puppeteer = require("puppeteer");
+const axios = require("axios");
 
-const DATE = new Date().getDate(); // update to 1-30 to select other day of month
+const date = "2025-02-27";
+const DATE = date || new Date().toISOString().split("T")[0];
 const INTERVAL_IN_MINUTES = 30; // how often to check
+const TIMES = ["7:30 PM", "6:45 PM", "7:00 PM", "7:15 PM"];
 // ! see TIMES below to set which classes to look for
+
+const formatAsFriendlyTime = (isoString) => {
+  return new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/Chicago",
+    hour: "numeric",
+    minute: "numeric",
+    hour12: true, // 12-hour format with AM/PM
+  }).format(new Date(isoString));
+};
 
 const findOpenTime = async () => {
   console.log("----------------");
   console.log(`> ${new Date()}`);
   console.log(`> checking for open times`);
 
-  // initial page load
-  const browser = await puppeteer.launch({ headless: true });
-  const page = await browser.newPage();
-  await page.goto(
-    "https://embracenorth.marianaiframes.com/iframe/schedule/daily/48541"
+  const classesRes = await axios.get(
+    `https://embracenorth.marianatek.com/api/customer/v1/classes?min_start_date=${DATE}&max_start_date=${DATE}&page_size=500&region=48541`
   );
-  await page.waitForNetworkIdle();
 
-  // date
-  if (DATE !== new Date().getDate()) {
-    await page.click(`button[data-test-date-button="${DATE}"]`);
-  }
-
-  // cookies
-  await page.waitForSelector(`button[data-test-button="accept-all-cookies"]`);
-  await page.click('button[data-test-button="accept-all-cookies"]');
-
-  // find open times
-  const table = await page.$("table");
-  const openLinks = await table.evaluate(() => {
-    // ! times in order of preference
-    const TIMES = ["6:45 PM", "7:00 PM", "7:15 PM"];
-
-    const trsWithOpenTimes = [...document.querySelectorAll("tr")].filter((tr) =>
-      [...tr.querySelectorAll("td")].some((td) =>
-        td.textContent.includes("Reserve")
-      )
+  const classesWithOpenTimes = classesRes.data.results
+    .filter(
+      (c) =>
+        c.available_spot_count > 0 &&
+        TIMES.includes(formatAsFriendlyTime(c.booking_start_datetime))
+    )
+    .map((c) => ({
+      ...c,
+      friendlyTime: formatAsFriendlyTime(c.booking_start_datetime),
+    }))
+    .sort(
+      (a, b) => TIMES.indexOf(a.friendlyTime) - TIMES.indexOf(b.friendlyTime)
     );
 
-    return trsWithOpenTimes
-      .map((tr) => {
-        return [
-          tr.querySelector("td").textContent.replace("60 min.Minneapolis", ""),
-          tr.querySelector("td a").href,
-        ];
-      })
-      .filter(([time]) => TIMES.includes(time))
-      .sort(([timeA], [timeB]) => TIMES.indexOf(timeA) - TIMES.indexOf(timeB));
-  });
-
-  if (openLinks.length === 0) {
+  if (classesWithOpenTimes.length === 0) {
     console.log(
       `> no open times found. next check in ${INTERVAL_IN_MINUTES} minutes`
     );
     return;
   } else {
-    console.log(`> open times found: ${openLinks.map((l) => l[0]).join(", ")}`);
+    console.log(
+      `> open times found: ${classesWithOpenTimes
+        .map((c) => c.friendlyTime)
+        .join(", ")}`
+    );
   }
 
+  // initial page load
+  const browser = await puppeteer.launch({ headless: false });
+  const page = await browser.newPage();
+
   // go to open class
-  await page.goto(openLinks[0][1]);
+  await page.goto(
+    `https://embracenorth.marianaiframes.com/iframe/classes/${classesWithOpenTimes[0].id}/reserve`
+  );
+  await page.waitForNetworkIdle();
+
+  // cookies
+  await page.waitForSelector(`button[data-test-button="accept-all-cookies"]`);
+  await page.click('button[data-test-button="accept-all-cookies"]');
 
   // login
   await page.waitForSelector('button[data-test-button="log-in"]');
@@ -73,7 +78,10 @@ const findOpenTime = async () => {
   // confirm
   await page.waitForSelector('button[data-test-button="reserve"]');
   await page.click('button[data-test-button="reserve"]');
-  await page.waitForNetworkIdle();
+
+  await page.waitForSelector(
+    'a[data-test="data-test-button="book-another-class""]'
+  );
 
   console.log(`> booked class: ${openLinks[0][0]}`);
 

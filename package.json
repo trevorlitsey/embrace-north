@@ -4,11 +4,12 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "run": "node index"
+    "start": "node index"
   },
   "dependencies": {
     "axios": "1.7.9",
     "puppeteer": "24.2.1",
-    "dotenv": "16.4.7"
+    "dotenv": "16.4.7",
+    "luxon": "3.5.0"
   }
 }

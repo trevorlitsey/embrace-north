@@ -14,7 +14,7 @@ in index.js, set `DATES` variable to a priority order list of times to look for.
 
 ## run
 ```
-> yarn run
+> yarn start
 ```
 
 have fun
