@@ -82,7 +82,7 @@ const findOpenTime = async () => {
     'a[data-test="data-test-button="book-another-class""]'
   );
 
-  console.log(`> booked class: ${openLinks[0][0]}`);
+  console.log(`> booked class: ${classesWithOpenTimes[0].friendlyTime}`);
 
   // bye
   await browser.close();
