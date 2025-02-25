@@ -2,10 +2,10 @@ require("dotenv").config();
 const puppeteer = require("puppeteer");
 const axios = require("axios");
 
-const date = ""; // yyyy-MM-dd to look for classes on. otherwise defaults to today
+const date = "2025-02-27"; // yyyy-MM-dd to look for classes on. otherwise defaults to today
 const DATE = date || new Date().toISOString().split("T")[0];
 const INTERVAL_IN_MINUTES = 30; // how often to check
-const TIMES = ["7:30 PM", "6:45 PM", "7:00 PM", "7:15 PM"]; // priority order of classes to look for
+const TIMES = ["7:45 PM", "8:00 PM"]; // priority order of classes to look for
 
 const formatAsFriendlyTime = (isoString) => {
   return new Intl.DateTimeFormat("en-US", {
@@ -41,7 +41,9 @@ const findOpenTime = async () => {
 
   if (classesWithOpenTimes.length === 0) {
     console.log(
-      `> no open times found. next check in ${INTERVAL_IN_MINUTES} minutes`
+      `> no open times found for ${TIMES.join(
+        ", "
+      )}. next check in ${INTERVAL_IN_MINUTES} minutes`
     );
     return;
   } else {
@@ -78,9 +80,7 @@ const findOpenTime = async () => {
   await page.waitForSelector('button[data-test-button="reserve"]');
   await page.click('button[data-test-button="reserve"]');
 
-  await page.waitForSelector(
-    'a[data-test="data-test-button="book-another-class""]'
-  );
+  await page.waitForSelector('a[data-test-button="book-another-class"]');
 
   console.log(`> booked class: ${classesWithOpenTimes[0].friendlyTime}`);
 
@@ -91,4 +91,4 @@ const findOpenTime = async () => {
 
 findOpenTime();
 
-setInterval(findOpenTime, 1000 * 60 * 30);
+setInterval(findOpenTime, INTERVAL_IN_MINUTES * 60 * 1000);
