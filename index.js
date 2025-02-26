@@ -4,8 +4,9 @@ const axios = require("axios");
 
 const date = "2025-02-27"; // yyyy-MM-dd to look for classes on. otherwise defaults to today
 const DATE = date || new Date().toISOString().split("T")[0];
-const INTERVAL_IN_MINUTES = 30; // how often to check
-const TIMES = ["7:45 PM", "8:00 PM"]; // priority order of classes to look for
+const INTERVAL_IN_MINUTES = 10; // how often to check
+const TIMES = ["6:00 PM", "7:45 PM", "8:00 PM"]; // priority order of classes to look for
+// const TIMES = ["7:30 PM", "7:15 PM", "7:45 PM", "8:00 PM"]; // priority order of classes to look for
 
 const formatAsFriendlyTime = (isoString) => {
   return new Intl.DateTimeFormat("en-US", {
@@ -19,7 +20,7 @@ const formatAsFriendlyTime = (isoString) => {
 const findOpenTime = async () => {
   console.log("----------------");
   console.log(`> ${new Date()}`);
-  console.log(`> checking for open times`);
+  console.log(`> checking for open times on ${DATE}`);
 
   const classesRes = await axios.get(
     `https://embracenorth.marianatek.com/api/customer/v1/classes?min_start_date=${DATE}&max_start_date=${DATE}&page_size=500&region=48541`

@@ -2,7 +2,8 @@
   "date": "2025-02-15",
   "times": ["6:30 PM", "5:30 PM"],
   "timeFulfilled": "5:30 PM",
-  "userId": "abc123",
+  "userId": "name@mail.com",
+  "password": "encryptedPassword",
   "createdAt": "",
   "updatedAt": ""
 }
