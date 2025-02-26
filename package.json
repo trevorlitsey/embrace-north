@@ -4,7 +4,8 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "start": "node index"
+    "cron": "node cron",
+    "go": "node index"
   },
   "dependencies": {
     "axios": "1.7.9",

@@ -1,12 +1,7 @@
 require("dotenv").config();
 const puppeteer = require("puppeteer");
 const axios = require("axios");
-
-const date = "2025-02-27"; // yyyy-MM-dd to look for classes on. otherwise defaults to today
-const DATE = date || new Date().toISOString().split("T")[0];
-const INTERVAL_IN_MINUTES = 10; // how often to check
-const TIMES = ["6:00 PM", "7:45 PM", "8:00 PM"]; // priority order of classes to look for
-// const TIMES = ["7:30 PM", "7:15 PM", "7:45 PM", "8:00 PM"]; // priority order of classes to look for
+const { DATE, INTERVAL_IN_MINUTES, TIMES } = require("./config");
 
 const formatAsFriendlyTime = (isoString) => {
   return new Intl.DateTimeFormat("en-US", {
@@ -92,4 +87,6 @@ const findOpenTime = async () => {
 
 findOpenTime();
 
-setInterval(findOpenTime, INTERVAL_IN_MINUTES * 60 * 1000);
+module.exports = {
+  findOpenTime,
+};
