@@ -1,5 +1,14 @@
 const { findOpenTime } = require("./index");
 
-const { INTERVAL_IN_MINUTES } = require("./config");
+const { DATE, INTERVAL_IN_MINUTES, TIMES } = require("./config");
 
-setInterval(findOpenTime, INTERVAL_IN_MINUTES * 60 * 1000);
+setInterval(
+  async () => {
+    const bookedTime = await findOpenTime(DATE, TIMES);
+
+    if (bookedTime) {
+      process.exit();
+    }
+  },
+  INTERVAL_IN_MINUTES * 60 * 1000
+);

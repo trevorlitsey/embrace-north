@@ -1,7 +1,6 @@
 require("dotenv").config();
 const puppeteer = require("puppeteer");
 const axios = require("axios");
-const { DATE, INTERVAL_IN_MINUTES, TIMES } = require("./config");
 
 const formatAsFriendlyTime = (isoString) => {
   return new Intl.DateTimeFormat("en-US", {
@@ -12,35 +11,31 @@ const formatAsFriendlyTime = (isoString) => {
   }).format(new Date(isoString));
 };
 
-const findOpenTime = async () => {
+const findOpenTime = async (date, times) => {
   console.log("----------------");
   console.log(`> ${new Date()}`);
-  console.log(`> checking for open times on ${DATE}`);
+  console.log(`> checking for open times on ${date}`);
 
   const classesRes = await axios.get(
-    `https://embracenorth.marianatek.com/api/customer/v1/classes?min_start_date=${DATE}&max_start_date=${DATE}&page_size=500&region=48541`
+    `https://embracenorth.marianatek.com/api/customer/v1/classes?min_start_date=${date}&max_start_date=${date}&page_size=500&region=48541`
   );
 
   const classesWithOpenTimes = classesRes.data.results
     .filter(
       (c) =>
         c.available_spot_count > 0 &&
-        TIMES.includes(formatAsFriendlyTime(c.booking_start_datetime))
+        times.includes(formatAsFriendlyTime(c.booking_start_datetime))
     )
     .map((c) => ({
       ...c,
       friendlyTime: formatAsFriendlyTime(c.booking_start_datetime),
     }))
     .sort(
-      (a, b) => TIMES.indexOf(a.friendlyTime) - TIMES.indexOf(b.friendlyTime)
+      (a, b) => times.indexOf(a.friendlyTime) - times.indexOf(b.friendlyTime)
     );
 
   if (classesWithOpenTimes.length === 0) {
-    console.log(
-      `> no open times found for ${TIMES.join(
-        ", "
-      )}. next check in ${INTERVAL_IN_MINUTES} minutes`
-    );
+    console.log(`> no open times found for ${times.join(", ")}.`);
     return;
   } else {
     console.log(
@@ -82,10 +77,9 @@ const findOpenTime = async () => {
 
   // bye
   await browser.close();
-  process.exit();
-};
 
-findOpenTime();
+  return classesWithOpenTimes[0].friendlyTime;
+};
 
 module.exports = {
   findOpenTime,
