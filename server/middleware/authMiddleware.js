@@ -16,8 +16,8 @@ const protect = async (req, res, next) => {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
       // Get user from the token
-      req.user = await User.findOne({ userId: decoded.userId }).select(
-        "-password -embraceNorthPassword"
+      req.user = await User.findOne({ _id: decoded.userId }).select(
+        "-password"
       );
 
       next();

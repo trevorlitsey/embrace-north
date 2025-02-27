@@ -5,13 +5,12 @@ const Appointment = require("../models/Appointment");
 // @access  Private
 const createAppointment = async (req, res) => {
   try {
-    const { date, times, timeFulfilled } = req.body;
+    const { date, times } = req.body;
 
     const appointment = await Appointment.create({
       date,
       times,
-      timeFulfilled,
-      userId: req.user.userId,
+      userId: req.user._id,
     });
 
     res.status(201).json(appointment);
@@ -25,7 +24,7 @@ const createAppointment = async (req, res) => {
 // @access  Private
 const getAppointments = async (req, res) => {
   try {
-    const appointments = await Appointment.find({ userId: req.user.userId });
+    const appointments = await Appointment.find({ userId: req.user._id });
     res.json(appointments);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -39,7 +38,7 @@ const getAppointmentById = async (req, res) => {
   try {
     const appointment = await Appointment.findById(req.params.id);
 
-    if (appointment && appointment.userId === req.user.userId) {
+    if (appointment && appointment.userId === req.user._id) {
       res.json(appointment);
     } else {
       res.status(404);
@@ -57,11 +56,9 @@ const updateAppointment = async (req, res) => {
   try {
     const appointment = await Appointment.findById(req.params.id);
 
-    if (appointment && appointment.userId === req.user.userId) {
+    if (appointment && appointment.userId === req.user._id) {
       appointment.date = req.body.date || appointment.date;
       appointment.times = req.body.times || appointment.times;
-      appointment.timeFulfilled =
-        req.body.timeFulfilled || appointment.timeFulfilled;
 
       const updatedAppointment = await appointment.save();
       res.json(updatedAppointment);
@@ -81,7 +78,7 @@ const deleteAppointment = async (req, res) => {
   try {
     const appointment = await Appointment.findById(req.params.id);
 
-    if (appointment && appointment.userId === req.user.userId) {
+    if (appointment && appointment.userId === req.user._id) {
       await appointment.remove();
       res.json({ message: "Appointment removed" });
     } else {
