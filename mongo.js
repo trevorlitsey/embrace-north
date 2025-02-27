@@ -11,6 +11,8 @@ const { bookTime, findOpenTime } = require("./index");
     timeFulfilled: null,
   });
 
+  console.log(`> ${appointments.length} pending appointment request(s) found`);
+
   for (let appointment of appointments) {
     const [classId, friendlyTime] = await findOpenTime(
       appointment.date,
