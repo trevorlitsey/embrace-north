@@ -1,7 +1,8 @@
 require("dotenv").config();
 const connectDB = require("./server/config/db");
 const Appointment = require("./server/models/Appointment");
-const { findOpenTime } = require("./index");
+const User = require("./server/models/User");
+const { bookTime, findOpenTime } = require("./index");
 
 (async () => {
   const conn = await connectDB();
@@ -11,13 +12,18 @@ const { findOpenTime } = require("./index");
   });
 
   for (let appointment of appointments) {
-    const bookedTime = findOpenTime(appointment.date, appointment.times);
+    const [classId, friendlyTime] = await findOpenTime(
+      appointment.date,
+      appointment.times
+    );
 
-    if (bookedTime) {
-      appointments[0].updateOne({
-        timeFulfilled: bookedTime,
-      });
-    }
+    const user = await User.findById({ _id: appointment.userId });
+
+    await bookTime(classId, user.username, user.getDecryptedPassword());
+
+    appointment.timeFulfilled = friendlyTime;
+
+    await appointment.save();
   }
 
   conn.disconnect();

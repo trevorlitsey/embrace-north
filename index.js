@@ -45,13 +45,17 @@ const findOpenTime = async (date, times) => {
     );
   }
 
+  return [classesWithOpenTimes[0].id, classesWithOpenTimes[0].friendlyTime];
+};
+
+const bookTime = async (classId, username, password) => {
   // initial page load
   const browser = await puppeteer.launch({ headless: false });
   const page = await browser.newPage();
 
   // go to open class
   await page.goto(
-    `https://embracenorth.marianaiframes.com/iframe/classes/${classesWithOpenTimes[0].id}/reserve`
+    `https://embracenorth.marianaiframes.com/iframe/classes/${classId}/reserve`
   );
   await page.waitForNetworkIdle();
 
@@ -63,8 +67,8 @@ const findOpenTime = async (date, times) => {
   await page.waitForSelector('button[data-test-button="log-in"]');
   await page.click('button[data-test-button="log-in"]');
   await page.waitForSelector('input[name="username"]');
-  await page.type('input[name="username"]', process.env.EMAIL);
-  await page.type('input[name="password"]', process.env.PASSWORD);
+  await page.type('input[name="username"]', username);
+  await page.type('input[name="password"]', password);
   await page.click('button[type="submit"]');
 
   // confirm
@@ -73,14 +77,13 @@ const findOpenTime = async (date, times) => {
 
   await page.waitForSelector('a[data-test-button="book-another-class"]');
 
-  console.log(`> booked class: ${classesWithOpenTimes[0].friendlyTime}`);
+  console.log(`> booked class: ${classId}`);
 
   // bye
   await browser.close();
-
-  return classesWithOpenTimes[0].friendlyTime;
 };
 
 module.exports = {
+  bookTime,
   findOpenTime,
 };

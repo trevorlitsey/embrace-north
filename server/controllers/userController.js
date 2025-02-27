@@ -13,10 +13,9 @@ const generateToken = (userId) => {
 // @access  Public
 const registerUser = async (req, res) => {
   try {
-    const { userId, password, embraceNorthUserName, embraceNorthPassword } =
-      req.body;
+    const { username, password } = req.body;
 
-    const userExists = await User.findOne({ userId });
+    const userExists = await User.findOne({ username });
 
     if (userExists) {
       res.status(400);
@@ -24,18 +23,15 @@ const registerUser = async (req, res) => {
     }
 
     const user = await User.create({
-      userId,
+      username,
       password,
-      embraceNorthUserName,
-      embraceNorthPassword,
     });
 
     if (user) {
       res.status(201).json({
         _id: user._id,
-        userId: user.userId,
-        embraceNorthUserName: user.embraceNorthUserName,
-        token: generateToken(user.userId),
+        username: user.username,
+        token: generateToken(user._id),
       });
     } else {
       res.status(400);
@@ -51,20 +47,19 @@ const registerUser = async (req, res) => {
 // @access  Public
 const loginUser = async (req, res) => {
   try {
-    const { userId, password } = req.body;
+    const { username, password } = req.body;
 
-    const user = await User.findOne({ userId });
+    const user = await User.findOne({ username });
 
     if (user && (await user.matchPassword(password))) {
       res.json({
         _id: user._id,
-        userId: user.userId,
-        embraceNorthUserName: user.embraceNorthUserName,
-        token: generateToken(user.userId),
+        username: user.username,
+        token: generateToken(user._id),
       });
     } else {
       res.status(401);
-      throw new Error("Invalid email or password");
+      throw new Error("Invalid username or password");
     }
   } catch (error) {
     res.status(401).json({ message: error.message });
@@ -76,9 +71,7 @@ const loginUser = async (req, res) => {
 // @access  Private
 const getUserProfile = async (req, res) => {
   try {
-    const user = await User.findOne({ userId: req.user.userId }).select(
-      "-password -embraceNorthPassword"
-    );
+    const user = await User.findOne({ _id: req.user._id }).select("-password");
 
     if (user) {
       res.json(user);
@@ -96,27 +89,19 @@ const getUserProfile = async (req, res) => {
 // @access  Private
 const updateUserProfile = async (req, res) => {
   try {
-    const user = await User.findOne({ userId: req.user.userId });
+    const user = await User.findOne({ _id: req.user._id });
 
     if (user) {
-      user.embraceNorthUserName =
-        req.body.embraceNorthUserName || user.embraceNorthUserName;
-
       if (req.body.password) {
         user.password = req.body.password;
-      }
-
-      if (req.body.embraceNorthPassword) {
-        user.embraceNorthPassword = req.body.embraceNorthPassword;
       }
 
       const updatedUser = await user.save();
 
       res.json({
         _id: updatedUser._id,
-        userId: updatedUser.userId,
-        embraceNorthUserName: updatedUser.embraceNorthUserName,
-        token: generateToken(updatedUser.userId),
+        username: updatedUser.username,
+        token: generateToken(updatedUser._id),
       });
     } else {
       res.status(404);
