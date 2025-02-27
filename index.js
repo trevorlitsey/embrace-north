@@ -50,7 +50,7 @@ const findOpenTime = async (date, times) => {
 
 const bookTime = async (classId, username, password) => {
   // initial page load
-  const browser = await puppeteer.launch({ headless: false });
+  const browser = await puppeteer.launch({ headless: true });
   const page = await browser.newPage();
 
   // go to open class
