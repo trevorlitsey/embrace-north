@@ -1,11 +1,5 @@
-// File: src/App.js
 import React from "react";
-import {
-  BrowserRouter as Router,
-  Routes,
-  Route,
-  Navigate,
-} from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import Navbar from "./components/Navbar";
 import Login from "./pages/Login";
@@ -22,13 +16,13 @@ const PrivateRoute = ({ children }) => {
     return <div className="loading">Loading...</div>;
   }
 
-  return isAuthenticated ? children : <Navigate to="/login" />;
+  return isAuthenticated ? children : <Navigate to="/login" replace />;
 };
 
 function App() {
   return (
-    <AuthProvider>
-      <Router>
+    <BrowserRouter>
+      <AuthProvider>
         <div className="app">
           <Navbar />
           <div className="container">
@@ -67,12 +61,19 @@ function App() {
                   </PrivateRoute>
                 }
               />
-              <Route path="/" element={<Navigate to="/dashboard" />} />
+              <Route
+                path="/"
+                element={
+                  <PrivateRoute>
+                    <Navigate to="/dashboard" replace />
+                  </PrivateRoute>
+                }
+              />
             </Routes>
           </div>
         </div>
-      </Router>
-    </AuthProvider>
+      </AuthProvider>
+    </BrowserRouter>
   );
 }
 

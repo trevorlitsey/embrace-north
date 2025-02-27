@@ -12,12 +12,11 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check if user is logged in
     const checkLoggedIn = async () => {
-      if (localStorage.getItem("token")) {
-        api.defaults.headers.common[
-          "Authorization"
-        ] = `Bearer ${localStorage.getItem("token")}`;
+      const token = localStorage.getItem("token");
+
+      if (token) {
+        api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
 
         try {
           const res = await api.get("/api/users/profile");
@@ -26,6 +25,8 @@ export const AuthProvider = ({ children }) => {
         } catch (err) {
           localStorage.removeItem("token");
           delete api.defaults.headers.common["Authorization"];
+          setIsAuthenticated(false);
+          setUser(null);
         }
       }
 
