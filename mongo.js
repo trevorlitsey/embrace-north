@@ -19,13 +19,15 @@ const { bookTime, findOpenTime } = require("./index");
       appointment.times
     );
 
-    const user = await User.findById({ _id: appointment.userId });
+    if (classId) {
+      const user = await User.findById({ _id: appointment.userId });
 
-    await bookTime(classId, user.username, user.getDecryptedPassword());
+      await bookTime(classId, user.username, user.getDecryptedPassword());
 
-    appointment.timeFulfilled = friendlyTime;
+      appointment.timeFulfilled = friendlyTime;
 
-    await appointment.save();
+      await appointment.save();
+    }
   }
 
   conn.disconnect();
