@@ -36,7 +36,7 @@ const findOpenTime = async (date, times) => {
 
   if (classesWithOpenTimes.length === 0) {
     console.log(`> no open times found for ${times.join(", ")}.`);
-    return;
+    return [];
   } else {
     console.log(
       `> open times found: ${classesWithOpenTimes
