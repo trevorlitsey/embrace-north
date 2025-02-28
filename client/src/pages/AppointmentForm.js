@@ -51,7 +51,10 @@ const AppointmentForm = () => {
   };
 
   const addTimeSlot = () => {
-    setFormData({ ...formData, times: [...formData.times, ""] });
+    setFormData({
+      ...formData,
+      times: [...formData.times, formData.times[formData.times.length - 1]],
+    });
   };
 
   const removeTimeSlot = (index) => {
@@ -110,6 +113,7 @@ const AppointmentForm = () => {
             type="date"
             id="date"
             name="date"
+            min={new Date().toISOString().slice(0, 10)}
             value={formData.date}
             onChange={onChange}
             required

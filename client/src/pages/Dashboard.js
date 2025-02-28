@@ -60,28 +60,35 @@ const Dashboard = () => {
             <div key={appointment._id} className="appointment-card">
               <div className="appointment-header">
                 <h3>{new Date(appointment.date).toLocaleDateString()}</h3>
-                <div className="appointment-actions">
-                  <Link
-                    to={`/appointments/edit/${appointment._id}`}
-                    className="btn btn-small"
-                  >
-                    Edit
-                  </Link>
-                  <button
-                    onClick={() => deleteAppointment(appointment._id)}
-                    className="btn btn-small btn-danger"
-                  >
-                    Delete
-                  </button>
-                </div>
+                {appointment.timeFulfilled ? null : (
+                  <div className="appointment-actions">
+                    <Link
+                      to={`/appointments/edit/${appointment._id}`}
+                      className="btn btn-small"
+                    >
+                      Edit
+                    </Link>
+                    <button
+                      onClick={() => deleteAppointment(appointment._id)}
+                      className="btn btn-small btn-danger"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                )}
               </div>
-              <div className="appointment-times">
-                <h4>Times:</h4>
+              <div className="appointment-times" style={{ marginBottom: 15 }}>
+                <h4>Times Looked For:</h4>
                 <ul>
                   {appointment.times.map((time, index) => (
                     <li key={index}>{time}</li>
                   ))}
                 </ul>
+              </div>
+
+              <div className="appointment-times">
+                <h4>Time Booked:</h4>
+                {appointment.timeFulfilled || <i>still looking</i>}
               </div>
             </div>
           ))}
