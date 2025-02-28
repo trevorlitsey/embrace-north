@@ -17,7 +17,16 @@ const app = express();
 // Middleware
 app.use(
   cors({
-    origin: process.env.CORS_ALLOWED_ORIGIN, // Allow only this domain
+    origin: function (origin, callback) {
+      if (
+        !origin ||
+        process.env.CORS_ALLOWED_ORIGINS.split(",").includes(origin)
+      ) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
   })
 );
 app.use(express.json());
