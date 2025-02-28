@@ -80,7 +80,7 @@ const deleteAppointment = async (req, res) => {
     const appointment = await Appointment.findById(req.params.id);
 
     if (appointment && appointment.userId === req.user._id.toString()) {
-      await appointment.remove();
+      await Appointment.deleteOne({ _id: req.params.id });
       res.json({ message: "Appointment removed" });
     } else {
       res.status(404);
