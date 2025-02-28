@@ -68,8 +68,8 @@ const OPTIONS = [
 
 const AppointmentForm = () => {
   const [formData, setFormData] = useState({
-    date: "",
-    times: [""],
+    date: new Date().toISOString().slice(0, 10),
+    times: [OPTIONS[0]],
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
