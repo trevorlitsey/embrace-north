@@ -88,7 +88,7 @@ const Dashboard = () => {
 
               <div className="appointment-times">
                 <h4>Time Booked:</h4>
-                {appointment.timeFulfilled || <i>still looking</i>}
+                {appointment.timeFulfilled || <i>No time booked yet</i>}
               </div>
             </div>
           ))}
