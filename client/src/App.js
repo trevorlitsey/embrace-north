@@ -7,7 +7,6 @@ import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import Profile from "./pages/Profile";
 import AppointmentForm from "./pages/AppointmentForm";
-import "./App.css";
 
 const PrivateRoute = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
