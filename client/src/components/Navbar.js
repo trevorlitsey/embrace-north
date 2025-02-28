@@ -15,7 +15,7 @@ const Navbar = () => {
   return (
     <nav className="navbar">
       <div className="navbar-brand">
-        <Link to="/">Appointment Manager</Link>
+        <Link to="/">Embrace North Waitlistish Thing</Link>
       </div>
       <ul className="navbar-nav">
         {isAuthenticated ? (
