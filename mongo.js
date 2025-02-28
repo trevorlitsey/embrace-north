@@ -14,19 +14,25 @@ const { bookTime, findOpenTime } = require("./index");
   console.log(`> ${appointments.length} pending appointment request(s) found`);
 
   for (let appointment of appointments) {
-    const [classId, friendlyTime] = await findOpenTime(
-      appointment.date,
-      appointment.times
-    );
+    try {
+      const [classId, friendlyTime] = await findOpenTime(
+        appointment.date,
+        appointment.times
+      );
 
-    if (classId) {
-      const user = await User.findById({ _id: appointment.userId });
+      if (classId) {
+        const user = await User.findById({ _id: appointment.userId });
 
-      await bookTime(classId, user.username, user.getDecryptedPassword());
+        await bookTime(classId, user.username, user.getDecryptedPassword());
 
-      appointment.timeFulfilled = friendlyTime;
+        appointment.timeFulfilled = friendlyTime;
 
-      await appointment.save();
+        await appointment.save();
+      }
+    } catch (e) {
+      console.error(
+        `> Error attempting to book appointment ${appointment._id}`
+      );
     }
   }
 
