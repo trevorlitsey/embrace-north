@@ -191,7 +191,10 @@ const AppointmentForm = () => {
         <div className="form-group">
           <label>Time Slots</label>
           <p>
-            <small>In order of preference. Only one time will be booked.</small>
+            <small>
+              Time slots to look for in order of preference. Only one time will
+              be booked.
+            </small>
           </p>
           {formData.times.map((time, index) => (
             <div key={index} className="time-slot">
