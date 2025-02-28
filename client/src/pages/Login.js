@@ -33,6 +33,7 @@ const Login = () => {
   return (
     <div className="auth-container">
       <h1>Login</h1>
+      <p>The same username and password as your Embrace North login.</p>
       {error && <div className="alert alert-danger">{error}</div>}
       <form onSubmit={onSubmit}>
         <div className="form-group">

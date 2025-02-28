@@ -39,6 +39,7 @@ const Register = () => {
   return (
     <div className="auth-container">
       <h1>Register</h1>
+      <p>Use the same username and password as your Embrace North login.</p>
       {error && <div className="alert alert-danger">{error}</div>}
       <form onSubmit={onSubmit}>
         <div className="form-group">
