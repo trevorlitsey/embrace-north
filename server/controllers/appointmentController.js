@@ -37,8 +37,9 @@ const getAppointments = async (req, res) => {
 const getAppointmentById = async (req, res) => {
   try {
     const appointment = await Appointment.findById(req.params.id);
+    console.log({ appointment }, req.user._id);
 
-    if (appointment && appointment.userId === req.user._id) {
+    if (appointment && appointment.userId === req.user._id.toString()) {
       res.json(appointment);
     } else {
       res.status(404);
@@ -56,7 +57,7 @@ const updateAppointment = async (req, res) => {
   try {
     const appointment = await Appointment.findById(req.params.id);
 
-    if (appointment && appointment.userId === req.user._id) {
+    if (appointment && appointment.userId === req.user._id.toString()) {
       appointment.date = req.body.date || appointment.date;
       appointment.times = req.body.times || appointment.times;
 
@@ -78,7 +79,7 @@ const deleteAppointment = async (req, res) => {
   try {
     const appointment = await Appointment.findById(req.params.id);
 
-    if (appointment && appointment.userId === req.user._id) {
+    if (appointment && appointment.userId === req.user._id.toString()) {
       await appointment.remove();
       res.json({ message: "Appointment removed" });
     } else {
