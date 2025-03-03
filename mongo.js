@@ -30,6 +30,7 @@ const { bookTime, findOpenTime } = require("./index");
         await appointment.save();
       }
     } catch (e) {
+      console.error(e)
       console.error(
         `> Error attempting to book appointment ${appointment._id}`
       );
