@@ -59,7 +59,7 @@ const Dashboard = () => {
           {appointments.map((appointment) => (
             <div key={appointment._id} className="appointment-card">
               <div className="appointment-header">
-                <h3>{new Date(appointment.date).toLocaleDateString()}</h3>
+                <h3>{appointment.date}</h3>
                 {appointment.timeFulfilled ? null : (
                   <div className="appointment-actions">
                     <Link
