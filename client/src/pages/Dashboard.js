@@ -78,7 +78,7 @@ const Dashboard = () => {
                 )}
               </div>
               <div className="appointment-times" style={{ marginBottom: 15 }}>
-                <h4>Times Looked For:</h4>
+                <h4>Looking For Times:</h4>
                 <ul>
                   {appointment.times.map((time, index) => (
                     <li key={index}>{time}</li>
