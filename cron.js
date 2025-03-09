@@ -6,7 +6,7 @@ const go = async () => {
   const [classId] = await findOpenTime(DATE, TIMES);
 
   if (classId) {
-    await bookTime(classId, process.env.EMAIL, process.env.PASSWORD);
+    await makeReservation(classId, process.env.EMAIL, process.env.PASSWORD);
     process.exit();
   }
 };

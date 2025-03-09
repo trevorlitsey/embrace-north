@@ -48,20 +48,18 @@ const findOpenTime = async (date, times) => {
   return [classesWithOpenTimes[0].id, classesWithOpenTimes[0].friendlyTime];
 };
 
-const bookTime = async (classId, username, password) => {
-  // initial page load
-  const browser = await puppeteer.launch({ headless: true });
+const getUserAccessToken = async (username, password) => {
+  const browser = await puppeteer.launch({
+    headless: true,
+  });
+
   const page = await browser.newPage();
 
-  // go to open class
   await page.goto(
-    `https://embracenorth.marianaiframes.com/iframe/classes/${classId}/reserve`
+    "https://embracenorth.marianaiframes.com/iframe/account/reservations"
   );
-  await page.waitForNetworkIdle();
 
-  // cookies
-  await page.waitForSelector(`button[data-test-button="accept-all-cookies"]`);
-  await page.click('button[data-test-button="accept-all-cookies"]');
+  await page.waitForNetworkIdle();
 
   // login
   await page.waitForSelector('button[data-test-button="log-in"]');
@@ -71,19 +69,71 @@ const bookTime = async (classId, username, password) => {
   await page.type('input[name="password"]', password);
   await page.click('button[type="submit"]');
 
-  // confirm
-  await page.waitForSelector('button[data-test-button="reserve"]');
-  await page.click('button[data-test-button="reserve"]');
+  await page.waitForNetworkIdle();
 
-  await page.waitForSelector('a[data-test-button="book-another-class"]');
+  await page.goto("https://embracenorth.marianaiframes.com");
+
+  await page.waitForNetworkIdle();
+
+  // Get cookies
+  const cookies = await page.cookies();
+
+  const tokenCookie = cookies.find((c) => c.name.startsWith("mt.token"));
+
+  // Decode the URL-encoded value
+  const decodedValue = decodeURIComponent(tokenCookie.value);
+
+  // Parse it as JSON
+  const jsonValue = JSON.parse(decodedValue);
+
+  // Extract the access token
+  const accessToken = jsonValue.tokenData.accessToken;
+
+  await browser.close();
+
+  return accessToken;
+};
+
+const getUserMembershipId = async (token) => {
+  const memberships = await axios.get(
+    "https://embracenorth.marianatek.com/api/customer/v1/me/memberships?is_active=true&page_size=5",
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+
+  return memberships.data.results[0].id;
+};
+
+const makeReservation = async (classId, username, password) => {
+  const token = await getUserAccessToken(username, password);
+  const membershipId = await getUserMembershipId(token);
+
+  await axios.post(
+    "https://embracenorth.marianatek.com/api/customer/v1/me/reservations",
+    {
+      class_session: {
+        id: classId,
+      },
+      is_booked_for_me: true,
+      reservation_type: "standard",
+      payment_option: {
+        id: `membership-${membershipId}`,
+      },
+    },
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
 
   console.log(`> booked class: ${classId}`);
-
-  // bye
-  await browser.close();
 };
 
 module.exports = {
-  bookTime,
   findOpenTime,
+  makeReservation,
 };
