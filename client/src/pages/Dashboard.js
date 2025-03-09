@@ -65,14 +65,15 @@ const Dashboard = () => {
                     "EEEE, MMMM d, yyyy"
                   )}
                 </h3>
-
                 <div className="appointment-actions">
-                  <Link
-                    to={`/appointments/edit/${appointment._id}`}
-                    className="btn btn-small"
-                  >
-                    Edit
-                  </Link>
+                  {appointment.timeFulfilled ? null : (
+                    <Link
+                      to={`/appointments/edit/${appointment._id}`}
+                      className="btn btn-small"
+                    >
+                      Edit
+                    </Link>
+                  )}
                   <button
                     onClick={() => deleteAppointment(appointment._id)}
                     className="btn btn-small btn-danger"

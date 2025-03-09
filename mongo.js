@@ -2,7 +2,7 @@ require("dotenv").config();
 const connectDB = require("./server/config/db");
 const Appointment = require("./server/models/Appointment");
 const User = require("./server/models/User");
-const { makeReservation, findOpenTime } = require("./index");
+const { bookTime, findOpenTime } = require("./index");
 
 (async () => {
   const conn = await connectDB();
@@ -23,11 +23,7 @@ const { makeReservation, findOpenTime } = require("./index");
       if (classId) {
         const user = await User.findById({ _id: appointment.userId });
 
-        await makeReservation(
-          classId,
-          user.username,
-          user.getDecryptedPassword()
-        );
+        await bookTime(classId, user.username, user.getDecryptedPassword());
 
         appointment.timeFulfilled = friendlyTime;
 
