@@ -73,15 +73,17 @@ const getUserAccessToken = async (username, password) => {
 
   await page.waitForNetworkIdle();
 
-  await page.goto("https://embracenorth.marianaiframes.com");
-
-  await page.waitForNetworkIdle();
-
   // Get cookies
   const cookies = await page.cookies();
+  console.log(`> found ${cookies.length} cookies`);
+
   console.log(cookies);
 
   const tokenCookie = cookies.find((c) => c.name.startsWith("mt.token"));
+
+  if (!tokenCookie) {
+    throw new Error("Could not find mt.token cookie");
+  }
 
   // Decode the URL-encoded value
   const decodedValue = decodeURIComponent(tokenCookie.value);
@@ -94,7 +96,7 @@ const getUserAccessToken = async (username, password) => {
 
   await browser.close();
 
-  console.log("> Received user token");
+  console.log("> got user token");
 
   return accessToken;
 };
