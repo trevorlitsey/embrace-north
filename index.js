@@ -49,6 +49,8 @@ const findOpenTime = async (date, times) => {
 };
 
 const getUserAccessToken = async (username, password) => {
+  console.log("> Fetching user token");
+
   const browser = await puppeteer.launch({
     headless: true,
   });
@@ -77,6 +79,7 @@ const getUserAccessToken = async (username, password) => {
 
   // Get cookies
   const cookies = await page.cookies();
+  console.log(cookies);
 
   const tokenCookie = cookies.find((c) => c.name.startsWith("mt.token"));
 
@@ -91,10 +94,14 @@ const getUserAccessToken = async (username, password) => {
 
   await browser.close();
 
+  console.log("> Received user token");
+
   return accessToken;
 };
 
 const getUserMembershipId = async (token) => {
+  console.log("> fetching user memberships");
+
   const memberships = await axios.get(
     "https://embracenorth.marianatek.com/api/customer/v1/me/memberships?is_active=true&page_size=5",
     {
@@ -104,10 +111,18 @@ const getUserMembershipId = async (token) => {
     }
   );
 
+  if (!memberships.data.results.length) {
+    throw new Error("no active memberships found for user");
+  }
+
+  console.log("> found user membership");
+
   return memberships.data.results[0].id;
 };
 
 const makeReservation = async (classId, username, password) => {
+  console.log(`> booking class: ${classId}`);
+
   const token = await getUserAccessToken(username, password);
   const membershipId = await getUserMembershipId(token);
 
