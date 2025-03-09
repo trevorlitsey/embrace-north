@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import api from "../utils/api";
+import { DateTime } from "luxon";
 
 const Dashboard = () => {
   const [appointments, setAppointments] = useState([]);
@@ -59,23 +60,26 @@ const Dashboard = () => {
           {appointments.map((appointment) => (
             <div key={appointment._id} className="appointment-card">
               <div className="appointment-header">
-                <h3>{appointment.date}</h3>
-                {appointment.timeFulfilled ? null : (
-                  <div className="appointment-actions">
-                    <Link
-                      to={`/appointments/edit/${appointment._id}`}
-                      className="btn btn-small"
-                    >
-                      Edit
-                    </Link>
-                    <button
-                      onClick={() => deleteAppointment(appointment._id)}
-                      className="btn btn-small btn-danger"
-                    >
-                      Delete
-                    </button>
-                  </div>
-                )}
+                <h3>
+                  {DateTime.fromFormat(appointment.date, "yyyy-MM-dd").toFormat(
+                    "EEEE, MMMM d, yyyy"
+                  )}
+                </h3>
+
+                <div className="appointment-actions">
+                  <Link
+                    to={`/appointments/edit/${appointment._id}`}
+                    className="btn btn-small"
+                  >
+                    Edit
+                  </Link>
+                  <button
+                    onClick={() => deleteAppointment(appointment._id)}
+                    className="btn btn-small btn-danger"
+                  >
+                    Delete
+                  </button>
+                </div>
               </div>
               <div className="appointment-times" style={{ marginBottom: 15 }}>
                 <h4>Looking For Times:</h4>

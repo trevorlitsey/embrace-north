@@ -24,11 +24,11 @@ const findOpenTime = async (date, times) => {
     .filter(
       (c) =>
         c.available_spot_count > 0 &&
-        times.includes(formatAsFriendlyTime(c.booking_start_datetime))
+        times.includes(formatAsFriendlyTime(c.start_datetime))
     )
     .map((c) => ({
       ...c,
-      friendlyTime: formatAsFriendlyTime(c.booking_start_datetime),
+      friendlyTime: formatAsFriendlyTime(c.start_datetime),
     }))
     .sort(
       (a, b) => times.indexOf(a.friendlyTime) - times.indexOf(b.friendlyTime)

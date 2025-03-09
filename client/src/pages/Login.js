@@ -21,12 +21,16 @@ const Login = () => {
   const onSubmit = async (e) => {
     e.preventDefault();
 
-    const result = await login({ username, password });
+    try {
+      const result = await login({ username, password });
 
-    if (result.success) {
-      navigate("/dashboard");
-    } else {
-      setError(result.error);
+      if (result.success) {
+        navigate("/dashboard");
+      } else {
+        setError(result.error);
+      }
+    } catch (e) {
+      setError(e.message);
     }
   };
 

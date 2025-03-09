@@ -27,12 +27,16 @@ const Register = () => {
       return;
     }
 
-    const result = await register({ username, password });
+    try {
+      const result = await register({ username, password });
 
-    if (result.success) {
-      navigate("/dashboard");
-    } else {
-      setError(result.error);
+      if (result.success) {
+        navigate("/dashboard");
+      } else {
+        setError(result.error);
+      }
+    } catch (e) {
+      setError(e.message);
     }
   };
 
