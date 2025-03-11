@@ -48,42 +48,6 @@ const findOpenTime = async (date, times) => {
   return [classesWithOpenTimes[0].id, classesWithOpenTimes[0].friendlyTime];
 };
 
-// ! TODO: retire
-const bookTime = async (classId, username, password) => {
-  // initial page load
-  const browser = await puppeteer.launch({ headless: true });
-  const page = await browser.newPage();
-
-  // go to open class
-  await page.goto(
-    `https://embracenorth.marianaiframes.com/iframe/classes/${classId}/reserve`
-  );
-  await page.waitForNetworkIdle();
-
-  // cookies
-  await page.waitForSelector(`button[data-test-button="accept-all-cookies"]`);
-  await page.click('button[data-test-button="accept-all-cookies"]');
-
-  // login
-  await page.waitForSelector('button[data-test-button="log-in"]');
-  await page.click('button[data-test-button="log-in"]');
-  await page.waitForSelector('input[name="username"]');
-  await page.type('input[name="username"]', username);
-  await page.type('input[name="password"]', password);
-  await page.click('button[type="submit"]');
-
-  // confirm
-  await page.waitForSelector('button[data-test-button="reserve"]');
-  await page.click('button[data-test-button="reserve"]');
-
-  await page.waitForSelector('a[data-test-button="book-another-class"]');
-
-  console.log(`> booked class: ${classId}`);
-
-  // bye
-  await browser.close();
-};
-
 const getUserAccessToken = async (username, password) => {
   console.log("> fetching user token");
 
@@ -185,7 +149,6 @@ const makeReservation = async (classId, username, password) => {
 
 module.exports = {
   getUserAccessToken,
-  bookTime,
   findOpenTime,
   makeReservation,
 };
