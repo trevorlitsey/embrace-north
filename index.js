@@ -97,14 +97,6 @@ const getUserAccessToken = async (username, password) => {
     "https://embracenorth.marianaiframes.com/iframe/account/reservations"
   );
 
-  // login
-  await page.waitForSelector('button[data-test-button="log-in"]');
-  await page.click('button[data-test-button="log-in"]');
-  await page.waitForSelector('input[name="username"]');
-  await page.type('input[name="username"]', username);
-  await page.type('input[name="password"]', password);
-  await page.click('button[type="submit"]');
-
   let accessToken;
 
   page.on("response", async (response) => {
@@ -119,7 +111,17 @@ const getUserAccessToken = async (username, password) => {
     }
   });
 
+  // login
+  await page.waitForSelector('button[data-test-button="log-in"]');
+  await page.click('button[data-test-button="log-in"]');
+  await page.waitForSelector('input[name="username"]');
+  await page.type('input[name="username"]', username);
+  await page.type('input[name="password"]', password);
+  await page.click('button[type="submit"]');
+
   await page.waitForNetworkIdle();
+
+  console.log({ accessToken });
 
   if (!accessToken) {
     throw new Error("Could not find the access token");
