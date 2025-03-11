@@ -111,7 +111,9 @@ const getUserAccessToken = async (username, password) => {
     console.log(response.url());
 
     if (response.url().includes("/o/token")) {
+      console.log("found o token");
       const body = await response.json();
+      console.log(body);
 
       accessToken = body.access_token;
     }
