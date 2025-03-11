@@ -127,8 +127,6 @@ const getUserAccessToken = async (username, password) => {
     n++;
   }
 
-  console.log({ accessToken });
-
   if (!accessToken) {
     throw new Error("Could not find the access token");
   }
@@ -166,7 +164,7 @@ const makeReservation = async (classId, username, password) => {
 
   const token = await getUserAccessToken(username, password);
   const membershipId = await getUserMembershipId(token);
-  return;
+
   await axios.post(
     "https://embracenorth.marianatek.com/api/customer/v1/me/reservations",
     {
