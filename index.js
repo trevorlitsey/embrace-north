@@ -121,7 +121,11 @@ const getUserAccessToken = async (username, password) => {
 
   await page.waitForNetworkIdle();
 
-  await new Promise((res) => setTimeout(res, 1000));
+  let n = 0;
+  while (n < 10 && !accessToken) {
+    await new Promise((res) => setTimeout(res, 1000));
+    n++;
+  }
 
   console.log({ accessToken });
 
