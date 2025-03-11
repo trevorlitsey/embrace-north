@@ -85,7 +85,7 @@ const bookTime = async (classId, username, password) => {
 };
 
 const getUserAccessToken = async (username, password) => {
-  console.log("> Fetching user token");
+  console.log("> fetching user token");
 
   const browser = await puppeteer.launch({
     headless: true,
@@ -97,8 +97,6 @@ const getUserAccessToken = async (username, password) => {
     "https://embracenorth.marianaiframes.com/iframe/account/reservations"
   );
 
-  await page.waitForNetworkIdle();
-
   // login
   await page.waitForSelector('button[data-test-button="log-in"]');
   await page.click('button[data-test-button="log-in"]');
@@ -107,32 +105,27 @@ const getUserAccessToken = async (username, password) => {
   await page.type('input[name="password"]', password);
   await page.click('button[type="submit"]');
 
+  let accessToken;
+
+  page.on("response", async (response) => {
+    console.log(response.url());
+
+    if (response.url().includes("/o/token")) {
+      const body = await response.json();
+
+      accessToken = body.access_token;
+    }
+  });
+
   await page.waitForNetworkIdle();
 
-  // Get cookies
-  const cookies = await page.cookies();
-  console.log(`> found ${cookies.length} cookies`);
-
-  console.log(cookies);
-
-  const tokenCookie = cookies.find((c) => c.name.startsWith("mt.token"));
-
-  if (!tokenCookie) {
-    throw new Error("Could not find mt.token cookie");
+  if (!accessToken) {
+    throw new Error("Could not find the access token");
   }
-
-  // Decode the URL-encoded value
-  const decodedValue = decodeURIComponent(tokenCookie.value);
-
-  // Parse it as JSON
-  const jsonValue = JSON.parse(decodedValue);
-
-  // Extract the access token
-  const accessToken = jsonValue.tokenData.accessToken;
 
   await browser.close();
 
-  console.log("> got user token");
+  console.log("> got user access token");
 
   return accessToken;
 };
@@ -163,7 +156,7 @@ const makeReservation = async (classId, username, password) => {
 
   const token = await getUserAccessToken(username, password);
   const membershipId = await getUserMembershipId(token);
-
+  return;
   await axios.post(
     "https://embracenorth.marianatek.com/api/customer/v1/me/reservations",
     {
@@ -187,6 +180,7 @@ const makeReservation = async (classId, username, password) => {
 };
 
 module.exports = {
+  getUserAccessToken,
   bookTime,
   findOpenTime,
   makeReservation,

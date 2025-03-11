@@ -1,4 +1,4 @@
-const { findOpenTime, bookTime } = require("./index");
+const { findOpenTime } = require("./index");
 
 const { DATE, INTERVAL_IN_MINUTES, TIMES } = require("./config");
 
