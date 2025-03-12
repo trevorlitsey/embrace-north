@@ -93,7 +93,23 @@ const Dashboard = () => {
 
               <div className="appointment-times">
                 <h4>Time Booked:</h4>
-                {appointment.timeFulfilled || <i>No time booked yet</i>}
+                {appointment.timeFulfilled || (
+                  <i>
+                    No time booked yet.
+                    {appointment.lastChecked ? (
+                      <>
+                        {" "}
+                        <i style={{ marginTop: 5 }}>
+                          Last checked at{" "}
+                          {DateTime.fromISO(appointment.lastChecked).toFormat(
+                            "hh:mm a"
+                          )}
+                          .
+                        </i>
+                      </>
+                    ) : null}
+                  </i>
+                )}
               </div>
             </div>
           ))}
