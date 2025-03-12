@@ -14,7 +14,7 @@ const appointmentSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
-    errors: {
+    pollingErrors: {
       type: [String],
       default: [],
     },

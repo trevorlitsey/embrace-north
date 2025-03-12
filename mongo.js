@@ -38,10 +38,10 @@ const { makeReservation, findOpenTime } = require("./index");
       console.error(
         `> Error attempting to book appointment ${appointment._id}`
       );
-      if (appointment.errors) {
-        appointment.errors.push(e.message);
+      if (appointment.pollingErrors) {
+        appointment.pollingErrors.push(e.message);
       } else {
-        appointment.errors = [e.message];
+        appointment.pollingErrors = [e.message];
       }
     } finally {
       await appointment.save();
