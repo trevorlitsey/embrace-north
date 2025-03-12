@@ -23,6 +23,9 @@ const appointmentSchema = new mongoose.Schema(
       required: true,
       ref: "User",
     },
+    lastChecked: {
+      type: Date,
+    },
   },
   {
     timestamps: true,

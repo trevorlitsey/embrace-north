@@ -44,6 +44,7 @@ const { makeReservation, findOpenTime } = require("./index");
         appointment.pollingErrors = [e.message];
       }
     } finally {
+      appointment.lastChecked = new Date();
       await appointment.save();
     }
   }
