@@ -32,10 +32,10 @@ const findOpenTime = async (times) => {
     )
     .sort(
       (a, b) =>
-        times.findIndexOf((t) =>
+        times.findIndex((t) =>
           DateTime.fromJSDate(t).equals(DateTime.fromISO(a.start_datetime))
         ) -
-        times.findIndexOf((t) =>
+        times.findIndex((t) =>
           DateTime.fromJSDate(t).equals(DateTime.fromISO(b.start_datetime))
         )
     );
