@@ -20,6 +20,7 @@ const findOpenTime = async (times) => {
       (c) =>
         c.available_spot_count > 0 &&
         times.some((t) => {
+          console.log(t, c.start_datetime);
           console.log(
             DateTime.fromJSDate(t),
             DateTime.fromISO(c.start_datetime)
