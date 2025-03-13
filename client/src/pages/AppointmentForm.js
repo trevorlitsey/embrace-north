@@ -2,74 +2,13 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../utils/api";
-
-const OPTIONS = [
-  "5:30 AM",
-  "5:45 AM",
-  "6:00 AM",
-  "6:15 AM",
-  "6:30 AM",
-  "6:45 AM",
-  "7:00 AM",
-  "7:15 AM",
-  "7:30 AM",
-  "7:45 AM",
-  "8:00 AM",
-  "8:15 AM",
-  "8:30 AM",
-  "8:45 AM",
-  "9:00 AM",
-  "9:15 AM",
-  "9:30 AM",
-  "9:45 AM",
-  "10:00 AM",
-  "10:15 AM",
-  "10:30 AM",
-  "10:45 AM",
-  "11:00 AM",
-  "11:15 AM",
-  "11:30 AM",
-  "11:45 AM",
-  "12:00 PM",
-  "12:15 PM",
-  "12:30 PM",
-  "12:45 PM",
-  "1:00 PM",
-  "1:15 PM",
-  "1:30 PM",
-  "1:45 PM",
-  "2:00 PM",
-  "2:15 PM",
-  "2:30 PM",
-  "2:45 PM",
-  "3:00 PM",
-  "3:15 PM",
-  "3:30 PM",
-  "3:45 PM",
-  "4:00 PM",
-  "4:15 PM",
-  "4:30 PM",
-  "4:45 PM",
-  "5:00 PM",
-  "5:15 PM",
-  "5:30 PM",
-  "5:45 PM",
-  "6:00 PM",
-  "6:15 PM",
-  "6:30 PM",
-  "6:45 PM",
-  "7:00 PM",
-  "7:15 PM",
-  "7:30 PM",
-  "7:45 PM",
-  "8:00 PM",
-  "8:15 PM",
-];
+import options from "./options.json";
+import { DateTime } from "luxon";
 
 const AppointmentForm = () => {
   const [formData, setFormData] = useState({
     date: new Date().toISOString().slice(0, 10),
-    times: [OPTIONS[0]],
+    times: [options[0].value],
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -83,11 +22,17 @@ const AppointmentForm = () => {
         try {
           setLoading(true);
           const res = await api.get(`/api/appointments/${id}`);
-          const { date, times } = res.data;
+          const { times } = res.data;
 
           setFormData({
-            date: new Date(date).toISOString().split("T")[0],
-            times: times,
+            date: DateTime.fromISO(times[0]).toFormat("yyyy-MM-dd", {
+              zone: "America/Chicago",
+            }),
+            times: times.map((t) =>
+              DateTime.fromISO(t).toFormat("HH:mm", {
+                zone: "America/Chicago",
+              })
+            ),
           });
         } catch (err) {
           setError("Failed to fetch appointment details");
@@ -106,8 +51,6 @@ const AppointmentForm = () => {
   };
 
   const onTimeChange = (index, value) => {
-    console.log(value);
-
     const updatedTimes = [...formData.times];
     updatedTimes[index] = value;
     setFormData({ ...formData, times: updatedTimes });
@@ -120,7 +63,9 @@ const AppointmentForm = () => {
       ...formData,
       times: [
         ...formData.times,
-        OPTIONS[OPTIONS.indexOf(lastTimesValue) + 1] || lastTimesValue,
+        options[options.findIndex((o) => o.value === lastTimesValue) + 1]
+          ?.value ||
+          options.find((o) => !formData.times.includes(o.value)).value,
       ],
     });
   };
@@ -147,7 +92,11 @@ const AppointmentForm = () => {
 
       const appointmentData = {
         ...formData,
-        times: filteredTimes,
+        times: filteredTimes.map((t) =>
+          DateTime.fromISO(`${formData.date}T${t}`, {
+            zone: "America/Chicago",
+          }).toISO()
+        ),
       };
 
       if (isEditMode) {
@@ -182,6 +131,9 @@ const AppointmentForm = () => {
             id="date"
             name="date"
             min={new Date().toISOString().slice(0, 10)}
+            max={DateTime.now()
+              .plus({ week: 1 })
+              .toFormat("yyyy-MM-dd", { zone: "America/Chicago" })}
             value={formData.date}
             onChange={onChange}
             required
@@ -205,9 +157,14 @@ const AppointmentForm = () => {
                 required
                 onChange={(e) => onTimeChange(index, e.target.value)}
               >
-                {OPTIONS.map((o) => (
-                  <option disabled={formData.times.includes(o)} value={o}>
-                    {o}
+                {options.map((o) => (
+                  <option
+                    disabled={
+                      o.value !== time && formData.times.includes(o.value)
+                    }
+                    value={o.value}
+                  >
+                    {o.displayName}
                   </option>
                 ))}
               </select>
@@ -223,7 +180,12 @@ const AppointmentForm = () => {
             </div>
           ))}
 
-          <button type="button" className="btn-small" onClick={addTimeSlot}>
+          <button
+            disabled={formData.times.length === options.length}
+            type="button"
+            className="btn-small"
+            onClick={addTimeSlot}
+          >
             Add Time Slot
           </button>
         </div>

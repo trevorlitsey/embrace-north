@@ -1,20 +1,15 @@
 require("dotenv").config();
 const puppeteer = require("puppeteer");
 const axios = require("axios");
+const { DateTime } = require("luxon");
 
-const formatAsFriendlyTime = (isoString) => {
-  return new Intl.DateTimeFormat("en-US", {
-    timeZone: "America/Chicago",
-    hour: "numeric",
-    minute: "numeric",
-    hour12: true, // 12-hour format with AM/PM
-  }).format(new Date(isoString));
-};
-
-const findOpenTime = async (date, times) => {
+const findOpenTime = async (times) => {
+  const date = DateTime.fromJSDate(times[0]).toFormat("yyyy-MM-dd", {
+    zone: "America/Chicago",
+  });
   console.log("----------------");
   console.log(`> ${new Date()}`);
-  console.log(`> checking for open times on ${date}`);
+  console.log(`> checking for open times for ${date}`);
 
   const classesRes = await axios.get(
     `https://embracenorth.marianatek.com/api/customer/v1/classes?min_start_date=${date}&max_start_date=${date}&page_size=500&region=48541`
@@ -24,28 +19,44 @@ const findOpenTime = async (date, times) => {
     .filter(
       (c) =>
         c.available_spot_count > 0 &&
-        times.includes(formatAsFriendlyTime(c.start_datetime))
+        times.some((t) => {
+          return DateTime.fromJSDate(t).equals(
+            DateTime.fromISO(c.start_datetime)
+          );
+        })
     )
-    .map((c) => ({
-      ...c,
-      friendlyTime: formatAsFriendlyTime(c.start_datetime),
-    }))
     .sort(
-      (a, b) => times.indexOf(a.friendlyTime) - times.indexOf(b.friendlyTime)
+      (a, b) =>
+        times.findIndexOf((t) =>
+          DateTime.fromJSDate(t).equals(DateTime.fromISO(a.start_datetime))
+        ) -
+        times.findIndexOf((t) =>
+          DateTime.fromJSDate(t).equals(DateTime.fromISO(b.start_datetime))
+        )
     );
 
   if (classesWithOpenTimes.length === 0) {
-    console.log(`> no open times found for ${times.join(", ")}.`);
+    console.log(
+      `> no open times found for ${times
+        .map((t) =>
+          DateTime.fromJSDate(t).toLocal({ timeZone: "America/Chicago" })
+        )
+        .join(", ")}.`
+    );
     return [];
   } else {
     console.log(
       `> open times found: ${classesWithOpenTimes
-        .map((c) => c.friendlyTime)
+        .map((c) =>
+          DateTime.fromISO(c.start_datetime).toLocal({
+            timeZone: "America/Chicago",
+          })
+        )
         .join(", ")}`
     );
   }
 
-  return [classesWithOpenTimes[0].id, classesWithOpenTimes[0].friendlyTime];
+  return [classesWithOpenTimes[0].id, classesWithOpenTimes[0].start_datetime];
 };
 
 const getUserAccessToken = async (username, password) => {
@@ -124,7 +135,6 @@ const makeReservation = async (classId, username, password) => {
 
   const token = await getUserAccessToken(username, password);
   const membershipId = await getUserMembershipId(token);
-
   await axios.post(
     "https://embracenorth.marianatek.com/api/customer/v1/me/reservations",
     {

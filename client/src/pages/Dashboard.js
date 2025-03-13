@@ -61,8 +61,9 @@ const Dashboard = () => {
             <div key={appointment._id} className="appointment-card">
               <div className="appointment-header">
                 <h3>
-                  {DateTime.fromFormat(appointment.date, "yyyy-MM-dd").toFormat(
-                    "EEEE, MMMM d, yyyy"
+                  {DateTime.fromISO(appointment.times[0]).toFormat(
+                    "EEEE, MMMM d, yyyy",
+                    { zone: "America/Chicago" }
                   )}
                 </h3>
                 <div className="appointment-actions">
@@ -85,15 +86,24 @@ const Dashboard = () => {
               <div className="appointment-times" style={{ marginBottom: 15 }}>
                 <h4>Looking For Times:</h4>
                 <ul>
-                  {appointment.times.map((time, index) => (
-                    <li key={index}>{time}</li>
+                  {appointment.times?.map((time, index) => (
+                    <li key={index}>
+                      {DateTime.fromISO(time).toFormat("h:mm a", {
+                        zone: "America/Chicago",
+                      })}
+                    </li>
                   ))}
                 </ul>
               </div>
 
               <div className="appointment-times">
                 <h4>Time Booked:</h4>
-                {appointment.timeFulfilled || (
+                {appointment.timeFulfilled ? (
+                  DateTime.fromISO(appointment.timeFulfilled).toFormat(
+                    "h:mm a",
+                    { zone: "America/Chicago" }
+                  )
+                ) : (
                   <i>
                     No time booked yet.
                     {appointment.lastChecked ? (
@@ -102,7 +112,8 @@ const Dashboard = () => {
                         <i style={{ marginTop: 5 }}>
                           Last checked at{" "}
                           {DateTime.fromISO(appointment.lastChecked).toFormat(
-                            "hh:mm a"
+                            "hh:mm a",
+                            { zone: "America/Chicago" }
                           )}
                           .
                         </i>

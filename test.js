@@ -1,4 +1,4 @@
-const { getUserAccessToken } = require("./index");
+const { getUserAccessToken } = require("./embrace");
 
 const go = async () => {
   console.log(

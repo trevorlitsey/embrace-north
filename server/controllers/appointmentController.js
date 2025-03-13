@@ -39,7 +39,6 @@ const getAppointments = async (req, res) => {
 const getAppointmentById = async (req, res) => {
   try {
     const appointment = await Appointment.findById(req.params.id);
-    console.log({ appointment }, req.user._id);
 
     if (appointment && appointment.userId === req.user._id.toString()) {
       res.json(appointment);
