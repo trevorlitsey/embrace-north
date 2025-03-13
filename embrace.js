@@ -39,7 +39,9 @@ const findOpenTime = async (times) => {
     console.log(
       `> no open times found for ${times
         .map((t) =>
-          DateTime.fromJSDate(t).toLocal({ timeZone: "America/Chicago" })
+          DateTime.fromJSDate(t).toFormat("yyyy-MM-dd h:mm a", {
+            timeZone: "America/Chicago",
+          })
         )
         .join(", ")}.`
     );
@@ -48,7 +50,7 @@ const findOpenTime = async (times) => {
     console.log(
       `> open times found: ${classesWithOpenTimes
         .map((c) =>
-          DateTime.fromISO(c.start_datetime).toLocal({
+          DateTime.fromISO(c.start_datetime).toFormat("yyyy-MM-dd h:mm a", {
             timeZone: "America/Chicago",
           })
         )
