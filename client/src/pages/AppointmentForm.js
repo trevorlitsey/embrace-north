@@ -91,9 +91,9 @@ const AppointmentForm = () => {
       const appointmentData = {
         ...formData,
         times: filteredTimes.map((t) =>
-          DateTime.fromISO(`${formData.date}T${t}`)
-            .setZone("America/Chicago")
-            .toISO()
+          DateTime.fromISO(`${formData.date}T${t}`, {
+            zone: "America/Chicago",
+          }).toISO()
         ),
       };
 
