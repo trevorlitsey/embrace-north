@@ -142,24 +142,34 @@ const makeReservation = async (classId, username, password) => {
 
   const token = await getUserAccessToken(username, password);
   const membershipId = await getUserMembershipId(token);
-  await axios.post(
-    "https://embracenorth.marianatek.com/api/customer/v1/me/reservations",
-    {
-      class_session: {
-        id: classId,
+  try {
+    await axios.post(
+      "https://embracenorth.marianatek.com/api/customer/v1/me/reservations",
+      {
+        class_session: {
+          id: classId,
+        },
+        is_booked_for_me: true,
+        reservation_type: "standard",
+        payment_option: {
+          id: `membership-${membershipId}`,
+        },
       },
-      is_booked_for_me: true,
-      reservation_type: "standard",
-      payment_option: {
-        id: `membership-${membershipId}`,
-      },
-    },
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+  } catch (e) {
+    if (e.response.status === 422) {
+      // class already booked
+      console.error(e.response.data);
+      console.log(`> class already booked: ${classId}`);
+    } else {
+      throw e.response || error;
     }
-  );
+  }
 
   console.log(`> booked class: ${classId}`);
 };
