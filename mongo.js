@@ -17,6 +17,8 @@ const { makeReservation, findOpenTime } = require("./embrace");
   console.log(`> ${appointments.length} pending appointment request(s) found`);
 
   for (let appointment of appointments) {
+    console.log(appointment);
+
     try {
       const [classId, timeToBook] = await findOpenTime(appointment.times);
 
