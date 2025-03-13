@@ -44,10 +44,10 @@ const { makeReservation, findOpenTime } = require("./embrace");
       } else {
         appointment.pollingErrors = [e.message];
       }
-    } finally {
-      appointment.lastChecked = new Date();
-      await appointment.save();
     }
+
+    appointment.lastChecked = new Date();
+    await appointment.save();
   }
 
   conn.disconnect();
