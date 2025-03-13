@@ -25,13 +25,11 @@ const AppointmentForm = () => {
           const { times } = res.data;
 
           setFormData({
-            date: DateTime.fromISO(times[0]).toFormat("yyyy-MM-dd", {
-              zone: "America/Chicago",
-            }),
+            date: DateTime.fromISO(times[0])
+              .setZone("America/Chicago")
+              .toFormat("yyyy-MM-dd"),
             times: times.map((t) =>
-              DateTime.fromISO(t).toFormat("HH:mm", {
-                zone: "America/Chicago",
-              })
+              DateTime.fromISO(t).setZone("America/Chicago").toFormat("HH:mm")
             ),
           });
         } catch (err) {
@@ -93,9 +91,9 @@ const AppointmentForm = () => {
       const appointmentData = {
         ...formData,
         times: filteredTimes.map((t) =>
-          DateTime.fromISO(`${formData.date}T${t}`, {
-            zone: "America/Chicago",
-          }).toISO()
+          DateTime.fromISO(`${formData.date}T${t}`)
+            .setZone("America/Chicago")
+            .toISO()
         ),
       };
 
@@ -132,8 +130,9 @@ const AppointmentForm = () => {
             name="date"
             min={new Date().toISOString().slice(0, 10)}
             max={DateTime.now()
+              .setZone("America/Chicago")
               .plus({ week: 1 })
-              .toFormat("yyyy-MM-dd", { zone: "America/Chicago" })}
+              .toFormat("yyyy-MM-dd")}
             value={formData.date}
             onChange={onChange}
             required

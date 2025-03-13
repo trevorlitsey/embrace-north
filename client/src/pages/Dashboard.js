@@ -61,10 +61,9 @@ const Dashboard = () => {
             <div key={appointment._id} className="appointment-card">
               <div className="appointment-header">
                 <h3>
-                  {DateTime.fromISO(appointment.times[0]).toFormat(
-                    "EEEE, MMMM d, yyyy",
-                    { zone: "America/Chicago" }
-                  )}
+                  {DateTime.fromISO(appointment.times[0])
+                    .setZone("America/Chicago")
+                    .toFormat("EEEE, MMMM d, yyyy")}
                 </h3>
                 <div className="appointment-actions">
                   {appointment.timeFulfilled ? null : (
@@ -88,9 +87,9 @@ const Dashboard = () => {
                 <ul>
                   {appointment.times?.map((time, index) => (
                     <li key={index}>
-                      {DateTime.fromISO(time).toFormat("h:mm a", {
-                        zone: "America/Chicago",
-                      })}
+                      {DateTime.fromISO(time)
+                        .setZone("America/Chicago")
+                        .toFormat("h:mm a")}
                     </li>
                   ))}
                 </ul>
@@ -99,10 +98,9 @@ const Dashboard = () => {
               <div className="appointment-times">
                 <h4>Time Booked:</h4>
                 {appointment.timeFulfilled ? (
-                  DateTime.fromISO(appointment.timeFulfilled).toFormat(
-                    "h:mm a",
-                    { zone: "America/Chicago" }
-                  )
+                  DateTime.fromISO(appointment.timeFulfilled)
+                    .setZone("America/Chicago")
+                    .toFormat("h:mm a")
                 ) : (
                   <i>
                     No time booked yet.
@@ -111,10 +109,9 @@ const Dashboard = () => {
                         {" "}
                         <i style={{ marginTop: 5 }}>
                           Last checked at{" "}
-                          {DateTime.fromISO(appointment.lastChecked).toFormat(
-                            "hh:mm a",
-                            { zone: "America/Chicago" }
-                          )}
+                          {DateTime.fromISO(appointment.lastChecked)
+                            .setZone("America/Chicago")
+                            .toFormat("hh:mm a")}
                           .
                         </i>
                       </>

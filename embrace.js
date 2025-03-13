@@ -4,11 +4,16 @@ const axios = require("axios");
 const { DateTime } = require("luxon");
 
 const findOpenTime = async (times) => {
-  const date = DateTime.fromJSDate(times[0]).toFormat("yyyy-MM-dd", {
-    zone: "America/Chicago",
-  });
+  const date = DateTime.fromJSDate(times[0])
+    .setZone("America/Chicago")
+    .toFormat("yyyy-MM-dd");
+
   console.log("----------------");
-  console.log(`> ${new Date()}`);
+  console.log(
+    `> ${DateTime.now()
+      .setZone("America/Chicago")
+      .toFormat("yyyy-MM-dd h:mm a")}`
+  );
   console.log(`> checking for open times for ${date}`);
 
   const classesRes = await axios.get(
@@ -45,9 +50,9 @@ const findOpenTime = async (times) => {
     console.log(
       `> no open times found for ${times
         .map((t) =>
-          DateTime.fromJSDate(t).toFormat("yyyy-MM-dd h:mm a", {
-            zone: "America/Chicago",
-          })
+          DateTime.fromJSDate(t)
+            .setZone("America/Chicago")
+            .toFormat("yyyy-MM-dd h:mm a")
         )
         .join(", ")}.`
     );
@@ -56,9 +61,9 @@ const findOpenTime = async (times) => {
     console.log(
       `> open times found: ${classesWithOpenTimes
         .map((c) =>
-          DateTime.fromISO(c.start_datetime).toFormat("yyyy-MM-dd h:mm a", {
-            zone: "America/Chicago",
-          })
+          DateTime.fromISO(c.start_datetime)
+            .setZone("America/Chicago")
+            .toFormat("yyyy-MM-dd h:mm a")
         )
         .join(", ")}`
     );
