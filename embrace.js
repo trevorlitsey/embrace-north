@@ -45,7 +45,7 @@ const findOpenTime = async (times) => {
       `> no open times found for ${times
         .map((t) =>
           DateTime.fromJSDate(t).toFormat("yyyy-MM-dd h:mm a", {
-            timeZone: "America/Chicago",
+            zone: "America/Chicago",
           })
         )
         .join(", ")}.`
@@ -56,7 +56,7 @@ const findOpenTime = async (times) => {
       `> open times found: ${classesWithOpenTimes
         .map((c) =>
           DateTime.fromISO(c.start_datetime).toFormat("yyyy-MM-dd h:mm a", {
-            timeZone: "America/Chicago",
+            zone: "America/Chicago",
           })
         )
         .join(", ")}`
