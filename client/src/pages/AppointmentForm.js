@@ -189,6 +189,44 @@ const AppointmentForm = () => {
           </button>
         </div>
 
+        <div className="form-group">
+          <label>Keep Checking Until</label>
+          <div className="time-slot">
+            <select
+              id="timeSelect"
+              name="timeSelect"
+              // value={time}
+              required
+              // onChange={(e) => onTimeChange(index, e.target.value)}
+            >
+              <option value="0m">
+                0 minutes before earliest time selected
+              </option>
+              <option value="30m">
+                30 minutes before earliest time selected
+              </option>
+              <option value="1h">1 hour before earliest time selected</option>
+              <option value="2h">2 hours before earliest time selected</option>
+              <option value="3h">3 hours before earliest time selected</option>
+              <option value="4h">4 hours before earliest time selected</option>
+              <option value="5h">5 hours before earliest time selected</option>
+              <option value="6h">6 hours before earliest time selected</option>
+              <option value="12h">
+                12 hours before earliest time selected
+              </option>
+              <option value="24h">
+                24 hours before earliest time selected
+              </option>
+            </select>
+          </div>
+          <p>
+            <small>
+              The app will check for available slots every 10 minutes until the
+              window selected is reached.
+            </small>
+          </p>
+        </div>
+
         <div className="form-actions">
           <button
             type="button"
