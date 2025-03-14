@@ -111,7 +111,7 @@ const Dashboard = () => {
                           Last checked at{" "}
                           {DateTime.fromISO(appointment.lastChecked)
                             .setZone("America/Chicago")
-                            .toFormat("hh:mm a")}
+                            .toFormat("h:mm a")}
                           .
                         </i>
                       </>
