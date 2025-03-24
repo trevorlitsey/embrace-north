@@ -4,12 +4,10 @@ const Appointment = require("./server/models/Appointment");
 const User = require("./server/models/User");
 const { makeReservation, findOpenTime } = require("./embrace");
 
-let conn;
-
 (async () => {
-  conn = await connectDB();
-
   try {
+    conn = await connectDB();
+
     const appointments = await Appointment.find({
       timeFulfilled: null,
       times: {
@@ -44,11 +42,8 @@ let conn;
         console.error(
           `> Error attempting to book appointment ${appointment._id}`
         );
-        if (appointment.pollingErrors) {
-          appointment.pollingErrors.push(e.message);
-        } else {
-          appointment.pollingErrors = [e.message];
-        }
+        appointment.pollingErrors = appointment.pollingErrors || [];
+        appointment.pollingErrors.push(e.message);
       }
 
       appointment.lastChecked = new Date();
@@ -57,16 +52,9 @@ let conn;
   } catch (e) {
     console.error("The whole thing failed :(");
     console.error(e);
+  } finally {
+    if (conn) {
+      await conn.disconnect();
+    }
   }
-
-  conn.disconnect();
 })();
-
-main().catch((err) => {
-  console.error("Main err :(");
-  console.error(err);
-
-  if (conn) {
-    conn.disconnect();
-  }
-});
