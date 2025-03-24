@@ -53,6 +53,7 @@ const { makeReservation, findOpenTime } = require("./embrace");
       await appointment.save();
     }
   } catch (e) {
+    console.error("The whole thing failed :(");
     console.error(e);
   }
 
