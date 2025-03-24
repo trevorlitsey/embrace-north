@@ -97,19 +97,17 @@ const getUserAccessToken = async (username, password) => {
   await page.type('input[name="password"]', password);
   await page.click('button[type="submit"]');
 
-  await page.waitForNetworkIdle();
-
   let n = 0;
   while (n < 10 && !accessToken) {
     await new Promise((res) => setTimeout(res, 1000));
     n++;
   }
 
+  await browser.close();
+
   if (!accessToken) {
     throw new Error("Could not find the access token");
   }
-
-  await browser.close();
 
   console.log("> got user access token");
 
@@ -141,6 +139,7 @@ const makeReservation = async (classId, username, password) => {
   console.log(`> booking class: ${classId}`);
 
   const token = await getUserAccessToken(username, password);
+
   const membershipId = await getUserMembershipId(token);
   try {
     await axios.post(
