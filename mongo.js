@@ -4,8 +4,10 @@ const Appointment = require("./server/models/Appointment");
 const User = require("./server/models/User");
 const { makeReservation, findOpenTime } = require("./embrace");
 
+let conn;
+
 (async () => {
-  const conn = await connectDB();
+  conn = await connectDB();
 
   try {
     const appointments = await Appointment.find({
@@ -59,3 +61,12 @@ const { makeReservation, findOpenTime } = require("./embrace");
 
   conn.disconnect();
 })();
+
+main().catch((err) => {
+  console.error("Main err :(");
+  console.error(err);
+
+  if (conn) {
+    conn.disconnect();
+  }
+});
