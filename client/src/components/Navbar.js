@@ -2,6 +2,8 @@
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import logo from "../logo.svg";
+import "./NavBar.css";
 
 const Navbar = () => {
   const { isAuthenticated, logout } = useAuth();
@@ -15,7 +17,9 @@ const Navbar = () => {
   return (
     <nav className="navbar">
       <div className="navbar-brand">
-        <Link to="/">Embrace North Waitlistish Thing</Link>
+        <Link to="/" className="brand-link">
+          <img src={logo} alt="Embrace North Logo" className="navbar-logo" />
+        </Link>
       </div>
       <ul className="navbar-nav">
         {isAuthenticated ? (
