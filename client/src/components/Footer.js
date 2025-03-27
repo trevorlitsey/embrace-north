@@ -12,9 +12,7 @@ const Footer = () => {
         <div className="wave wave2"></div>
       </div>
       <div className="footer-copyright">
-        <p>
-          &copy; {currentYear} T. Use at your own risk. All rights reserved.
-        </p>
+        <p>&copy; {currentYear} T. Use at your own risk.</p>
       </div>
     </footer>
   );
