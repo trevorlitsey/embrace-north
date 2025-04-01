@@ -133,6 +133,19 @@ const Dashboard = () => {
                   </i>
                 )}
               </div>
+
+              {appointment.pollingErrors.length ? (
+                <div className="appointment-errors">
+                  <h4>Polling Errors:</h4>
+                  <div className="alert alert-warning">
+                    <ul>
+                      {appointment.pollingErrors.slice(-10).map((e, index) => (
+                        <li key={index}>{e}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              ) : null}
             </div>
           ))}
         </div>
