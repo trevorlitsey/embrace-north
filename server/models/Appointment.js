@@ -10,6 +10,10 @@ const appointmentSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    fulfilledAt: {
+      type: Date,
+      default: null,
+    },
     classIdFulfilled: {
       type: String,
       default: null,

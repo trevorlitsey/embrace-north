@@ -98,21 +98,35 @@ const Dashboard = () => {
               <div className="appointment-times">
                 <h4>Time Booked:</h4>
                 {appointment.timeFulfilled ? (
-                  DateTime.fromISO(appointment.timeFulfilled)
-                    .setZone("America/Chicago")
-                    .toFormat("h:mm a")
-                ) : (
-                  <i>
-                    No time booked yet.
-                    {appointment.lastChecked ? (
+                  <>
+                    {DateTime.fromISO(appointment.timeFulfilled)
+                      .setZone("America/Chicago")
+                      .toFormat("h:mm a")}
+                    {appointment.fulfilledAt ? (
                       <>
                         {" "}
+                        <i>
+                          (Booked{" "}
+                          {DateTime.fromISO(appointment.fulfilledAt)
+                            .setZone("America/Chicago")
+                            .toRelative()}
+                          )
+                        </i>
+                      </>
+                    ) : null}
+                  </>
+                ) : (
+                  <i>
+                    No time booked yet
+                    {appointment.lastChecked ? (
+                      <>
                         <i style={{ marginTop: 5 }}>
-                          Last checked at{" "}
+                          {" "}
+                          (Last checked{" "}
                           {DateTime.fromISO(appointment.lastChecked)
                             .setZone("America/Chicago")
-                            .toFormat("h:mm a")}
-                          .
+                            .toRelative()}
+                          )
                         </i>
                       </>
                     ) : null}

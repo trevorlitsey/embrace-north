@@ -1,0 +1,2 @@
+- optinally text user when reservation is made
+- display errors

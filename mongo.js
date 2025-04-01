@@ -33,6 +33,7 @@ const { makeReservation, findOpenTime } = require("./embrace");
           );
 
           appointment.timeFulfilled = timeToBook;
+          appointment.fulfilledAt = new Date();
           appointment.classIdFulfilled = classId;
 
           await appointment.save();
