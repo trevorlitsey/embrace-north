@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { useFirstTimeUser } from "../hooks/useFirstTimeUser";
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -11,6 +12,7 @@ const Register = () => {
   });
   const [error, setError] = useState("");
   const { register } = useAuth();
+  const { markAsLoggedIn } = useFirstTimeUser();
   const navigate = useNavigate();
 
   const { username, password, confirmPassword } = formData;
@@ -31,6 +33,7 @@ const Register = () => {
       const result = await register({ username, password });
 
       if (result.success) {
+        markAsLoggedIn();
         navigate("/dashboard");
       } else {
         setError(result.error);

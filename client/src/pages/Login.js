@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { useFirstTimeUser } from "../hooks/useFirstTimeUser";
 
 const Login = () => {
   const [formData, setFormData] = useState({
@@ -10,6 +11,7 @@ const Login = () => {
   });
   const [error, setError] = useState("");
   const { login } = useAuth();
+  const { markAsLoggedIn } = useFirstTimeUser();
   const navigate = useNavigate();
 
   const { username, password } = formData;
@@ -25,6 +27,7 @@ const Login = () => {
       const result = await login({ username, password });
 
       if (result.success) {
+        markAsLoggedIn();
         navigate("/dashboard");
       } else {
         setError(result.error);

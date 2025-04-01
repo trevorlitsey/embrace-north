@@ -10,15 +10,25 @@ import Profile from "./pages/Profile";
 import AppointmentForm from "./pages/AppointmentForm";
 import "./index.css";
 import Loading from "./components/Loading";
+import { useFirstTimeUser } from "./hooks/useFirstTimeUser";
 
 const PrivateRoute = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
+  const { hasLoggedInBefore } = useFirstTimeUser();
 
   if (loading) {
     return <Loading />;
   }
 
-  return isAuthenticated ? children : <Navigate to="/login" replace />;
+  if (isAuthenticated) {
+    return children;
+  }
+
+  if (!hasLoggedInBefore) {
+    return <Navigate to="/register" replace />;
+  }
+
+  return <Navigate to="/login" replace />;
 };
 
 function App() {
