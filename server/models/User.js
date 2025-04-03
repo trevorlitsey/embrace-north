@@ -11,6 +11,21 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    phoneNumber: {
+      type: String,
+      required: false,
+      validate: {
+        validator: function (v) {
+          // Allow empty string or 10 digits
+          return !v || /^[0-9]{10}$/.test(v);
+        },
+        message: (props) => `${props.value} is not a valid phone number!`,
+      },
+    },
+    enableTextNotifications: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     timestamps: true,
@@ -22,6 +37,11 @@ userSchema.pre("save", async function (next) {
   try {
     if (this.isModified("password")) {
       this.password = encrypt(this.password);
+    }
+
+    // If phone number is empty, disable notifications
+    if (!this.phoneNumber) {
+      this.enableTextNotifications = false;
     }
 
     next();

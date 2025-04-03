@@ -31,6 +31,8 @@ const registerUser = async (req, res) => {
       res.status(201).json({
         _id: user._id,
         username: user.username,
+        phoneNumber: user.phoneNumber,
+        enableTextNotifications: user.enableTextNotifications,
         token: generateToken(user._id),
       });
     } else {
@@ -55,6 +57,8 @@ const loginUser = async (req, res) => {
       res.json({
         _id: user._id,
         username: user.username,
+        phoneNumber: user.phoneNumber,
+        enableTextNotifications: user.enableTextNotifications,
         token: generateToken(user._id),
       });
     } else {
@@ -92,8 +96,19 @@ const updateUserProfile = async (req, res) => {
     const user = await User.findOne({ _id: req.user._id });
 
     if (user) {
+      // Update password if provided
       if (req.body.password) {
         user.password = req.body.password;
+      }
+
+      // Update phone number if provided
+      if (req.body.phoneNumber !== undefined) {
+        user.phoneNumber = req.body.phoneNumber;
+      }
+
+      // Update notification preference if provided
+      if (req.body.enableTextNotifications !== undefined) {
+        user.enableTextNotifications = req.body.enableTextNotifications;
       }
 
       const updatedUser = await user.save();
@@ -101,6 +116,8 @@ const updateUserProfile = async (req, res) => {
       res.json({
         _id: updatedUser._id,
         username: updatedUser.username,
+        phoneNumber: updatedUser.phoneNumber,
+        enableTextNotifications: updatedUser.enableTextNotifications,
         token: generateToken(updatedUser._id),
       });
     } else {
