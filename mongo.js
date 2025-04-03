@@ -3,6 +3,7 @@ const connectDB = require("./server/config/db");
 const Appointment = require("./server/models/Appointment");
 const User = require("./server/models/User");
 const { makeReservation, findOpenTime } = require("./embrace");
+const { sendBookingNotification } = require("./twilio");
 
 (async () => {
   try {
@@ -37,6 +38,9 @@ const { makeReservation, findOpenTime } = require("./embrace");
           appointment.classIdFulfilled = classId;
 
           await appointment.save();
+          if (user.enableTextNotifications && user.phoneNumber) {
+            await sendBookingNotification(user.phoneNumber, appointment);
+          }
         }
       } catch (e) {
         console.error(e);
