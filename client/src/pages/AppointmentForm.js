@@ -33,7 +33,10 @@ const AppointmentForm = () => {
             ),
           });
         } catch (err) {
-          setError("Failed to fetch appointment details");
+          const errorMessage =
+            err.response?.data?.message ||
+            "Failed to fetch appointment details";
+          setError(errorMessage);
           console.error(err);
         } finally {
           setLoading(false);
@@ -46,6 +49,8 @@ const AppointmentForm = () => {
 
   const onChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+    // Clear error when user makes changes
+    setError("");
   };
 
   const onTimeChange = (index, value) => {
@@ -119,7 +124,11 @@ const AppointmentForm = () => {
   return (
     <div className="appointment-form-container">
       <h1>{isEditMode ? "Edit Appointment" : "Create New Appointment"}</h1>
-      {error && <div className="alert alert-danger">{error}</div>}
+      {error && (
+        <div className="alert alert-danger">
+          <strong>Error:</strong> {error}
+        </div>
+      )}
 
       <form onSubmit={onSubmit}>
         <div className="form-group">
