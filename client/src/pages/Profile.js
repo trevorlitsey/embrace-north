@@ -6,8 +6,6 @@ import PasswordChange from "../components/PasswordChange";
 
 const Profile = () => {
   const { updateProfile, user } = useAuth();
-  console.log("1", { user });
-  console.log("2", user.username);
 
   return (
     <div className="profile-container">
