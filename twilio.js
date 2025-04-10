@@ -10,7 +10,7 @@ const sendBookingNotification = async (phoneNumber, appointment) => {
   try {
     const formattedTime = DateTime.fromJSDate(appointment.timeFulfilled)
       .setZone("America/Chicago")
-      .toFormat("EEEE, MMMM d, yyyy at h:mm a");
+      .toFormat("EEEE, MMMM d, yyyy 'at' h:mm a");
 
     const message = await client.messages.create({
       body: `ENWT: Your appointment has been successfully booked for ${formattedTime}. Use the Embrace North app to manage your booked appointments.`,
