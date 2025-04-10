@@ -62,10 +62,6 @@ const NotificationSettings = ({ user, updateProfile }) => {
             pattern="[0-9]{10}"
             title="Please enter a valid 10-digit phone number"
           />
-          <small className="form-text text-muted">
-            Enter your phone number to receive text notifications when
-            appointments are booked.
-          </small>
         </div>
 
         <div className="form-group">

@@ -43,7 +43,7 @@ const PasswordChange = ({ updateProfile }) => {
     <div className="profile-section">
       <h3>Change Password</h3>
       <p className="section-description">
-        Update your password to keep your account secure.
+        If you update your Embrace North login you will need to update this too.
       </p>
       {success && <div className="alert alert-success">{success}</div>}
       {error && <div className="alert alert-danger">{error}</div>}

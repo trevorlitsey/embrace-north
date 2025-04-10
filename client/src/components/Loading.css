@@ -9,7 +9,7 @@
   height: 10px;
   width: 10px;
   border-radius: 50%;
-  background-color: #1E90FF;
+  background-color: #1e90ff;
   opacity: 0;
   animation: steam-animation 4s ease-out infinite;
 }
