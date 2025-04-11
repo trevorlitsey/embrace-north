@@ -9,7 +9,7 @@ const createAppointment = async (req, res) => {
 
     const appointment = await Appointment.create({
       date,
-      times,
+      times: times.sort(),
       userId: req.user._id,
     });
 
@@ -60,7 +60,7 @@ const updateAppointment = async (req, res) => {
 
     if (appointment && appointment.userId === req.user._id.toString()) {
       appointment.date = req.body.date || appointment.date;
-      appointment.times = req.body.times || appointment.times;
+      appointment.times = (req.body.times || appointment.times).sort();
 
       const updatedAppointment = await appointment.save();
       res.json(updatedAppointment);
