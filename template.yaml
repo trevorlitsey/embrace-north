@@ -12,6 +12,22 @@ Parameters:
   CorsAllowedOrigins:
     Type: String
     Default: "*"
+  DomainName:
+    Type: String
+    Default: "embrace.trevor.fail"
+    Description: Custom domain for the client
+  TwilioAccountSid:
+    Type: String
+    Default: ""
+    NoEcho: true
+  TwilioAuthToken:
+    Type: String
+    Default: ""
+    NoEcho: true
+  TwilioPhoneNumber:
+    Type: String
+    Default: ""
+    Description: Twilio phone number in E.164 format (e.g. +15551234567)
 
 Globals:
   Function:
@@ -64,6 +80,13 @@ Resources:
         - AttributeName: appointmentId
           KeyType: RANGE
 
+  # ACM Certificate (DNS-validated — cross-account validation required, see setup-dns.sh)
+  Certificate:
+    Type: AWS::CertificateManager::Certificate
+    Properties:
+      DomainName: !Ref DomainName
+      ValidationMethod: DNS
+
   # API Lambda
   ApiFunction:
     Type: AWS::Serverless::Function
@@ -97,8 +120,7 @@ Resources:
     Properties:
       StageName: $default
       CorsConfiguration:
-        AllowOrigins:
-          - "*"
+        AllowOrigins: !Split [",", !Ref CorsAllowedOrigins]
         AllowHeaders:
           - Content-Type
           - Authorization
@@ -122,11 +144,11 @@ Resources:
             TableName: !Ref UsersTable
         - DynamoDBCrudPolicy:
             TableName: !Ref AppointmentsTable
-        - Statement:
-            - Effect: Allow
-              Action:
-                - sns:Publish
-              Resource: "*"
+      Environment:
+        Variables:
+          TWILIO_ACCOUNT_SID: !Ref TwilioAccountSid
+          TWILIO_AUTH_TOKEN: !Ref TwilioAuthToken
+          TWILIO_PHONE_NUMBER: !Ref TwilioPhoneNumber
       Events:
         ScheduleEvent:
           Type: Schedule
@@ -176,6 +198,12 @@ Resources:
       DistributionConfig:
         Enabled: true
         DefaultRootObject: index.html
+        Aliases:
+          - !Ref DomainName
+        ViewerCertificate:
+          AcmCertificateArn: !Ref Certificate
+          SslSupportMethod: sni-only
+          MinimumProtocolVersion: TLSv1.2_2021
         Origins:
           - Id: S3Origin
             DomainName: !GetAtt ClientBucket.RegionalDomainName
@@ -208,3 +236,9 @@ Outputs:
   ClientDistributionId:
     Description: CloudFront distribution ID
     Value: !Ref ClientDistribution
+  CloudFrontDomain:
+    Description: CloudFront domain name (for DNS CNAME)
+    Value: !GetAtt ClientDistribution.DomainName
+  CertificateArn:
+    Description: ACM certificate ARN
+    Value: !Ref Certificate

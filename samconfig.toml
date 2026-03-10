@@ -6,3 +6,15 @@ resolve_s3 = true
 capabilities = "CAPABILITY_IAM"
 region = "us-east-1"
 confirm_changeset = true
+
+[fun.deploy.parameters]
+stack_name = "embrace-north"
+resolve_s3 = true
+capabilities = "CAPABILITY_IAM"
+region = "us-east-1"
+confirm_changeset = false
+profile = "fun"
+parameter_overrides = [
+  "CorsAllowedOrigins=https://embrace.trevor.fail",
+  "DomainName=embrace.trevor.fail",
+]

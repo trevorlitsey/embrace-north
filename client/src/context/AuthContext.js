@@ -51,7 +51,7 @@ export const AuthProvider = ({ children }) => {
     } catch (err) {
       return {
         success: false,
-        error: err.response.data.message,
+        error: err.response?.data?.message || err.message || "Login failed",
       };
     }
   };
@@ -83,7 +83,7 @@ export const AuthProvider = ({ children }) => {
     } catch (err) {
       return {
         success: false,
-        error: err.response.data.message,
+        error: err.response?.data?.message || err.message || "Update failed",
       };
     }
   };

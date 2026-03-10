@@ -117,18 +117,28 @@ const Dashboard = () => {
                   </>
                 ) : (
                   <i>
-                    No time booked yet
+                    No time booked yet.{" "}
+                    {(() => {
+                      const base = appointment.lastChecked
+                        ? DateTime.fromISO(appointment.lastChecked)
+                        : DateTime.now();
+                      const nextCheck = base.plus({ minutes: 5 });
+                      const minsUntil = Math.ceil(
+                        nextCheck.diffNow("minutes").minutes
+                      );
+                      return minsUntil <= 0
+                        ? "Checking soon..."
+                        : `Next check in ~${minsUntil} min.`;
+                    })()}
                     {appointment.lastChecked ? (
-                      <>
-                        <i style={{ marginTop: 5 }}>
-                          {" "}
-                          (Last checked{" "}
-                          {DateTime.fromISO(appointment.lastChecked)
-                            .setZone("America/Chicago")
-                            .toRelative()}
-                          )
-                        </i>
-                      </>
+                      <i style={{ marginTop: 5 }}>
+                        {" "}
+                        (Last checked{" "}
+                        {DateTime.fromISO(appointment.lastChecked)
+                          .setZone("America/Chicago")
+                          .toRelative()}
+                        )
+                      </i>
                     ) : null}
                   </i>
                 )}
