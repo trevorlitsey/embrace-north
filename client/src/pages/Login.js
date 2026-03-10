@@ -9,6 +9,7 @@ const Login = () => {
     password: "",
   });
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
 
@@ -20,6 +21,7 @@ const Login = () => {
 
   const onSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
 
     try {
       const result = await login({ username, password });
@@ -28,9 +30,11 @@ const Login = () => {
         navigate("/dashboard");
       } else {
         setError(result.error);
+        setLoading(false);
       }
     } catch (e) {
       setError(e.message);
+      setLoading(false);
     }
   };
 
@@ -62,8 +66,9 @@ const Login = () => {
             required
           />
         </div>
-        <button type="submit" className="btn btn-primary">
-          Login
+        <button type="submit" className="btn btn-primary" disabled={loading}>
+          {loading && <span className="btn-spinner" />}
+          {loading ? "Logging in..." : "Login"}
         </button>
       </form>
     </div>
