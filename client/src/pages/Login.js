@@ -1,8 +1,7 @@
 // File: src/pages/Login.js
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { useFirstTimeUser } from "../hooks/useFirstTimeUser";
 
 const Login = () => {
   const [formData, setFormData] = useState({
@@ -11,7 +10,6 @@ const Login = () => {
   });
   const [error, setError] = useState("");
   const { login } = useAuth();
-  const { markAsLoggedIn } = useFirstTimeUser();
   const navigate = useNavigate();
 
   const { username, password } = formData;
@@ -27,7 +25,6 @@ const Login = () => {
       const result = await login({ username, password });
 
       if (result.success) {
-        markAsLoggedIn();
         navigate("/dashboard");
       } else {
         setError(result.error);
@@ -40,7 +37,7 @@ const Login = () => {
   return (
     <div className="auth-container">
       <h1>Login</h1>
-      <p>The same username and password as your Embrace North login.</p>
+      <p>Use your Embrace North username and password.</p>
       {error && <div className="alert alert-danger">{error}</div>}
       <form onSubmit={onSubmit}>
         <div className="form-group">
@@ -69,9 +66,6 @@ const Login = () => {
           Login
         </button>
       </form>
-      <p>
-        Don't have an account? <Link to="/register">Register</Link>
-      </p>
     </div>
   );
 };

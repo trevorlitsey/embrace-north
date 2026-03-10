@@ -1,19 +1,11 @@
 {
   "name": "embrace-north",
   "version": "1.0.0",
-  "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "cron": "node cron",
-    "go": "node index",
-    "mongo": "node mongo"
-  },
-  "dependencies": {
-    "axios": "1.7.9",
-    "puppeteer": "24.2.1",
-    "dotenv": "16.4.7",
-    "luxon": "3.5.0",
-    "twilio": "5.5.1",
-    "mongoose": "8.10.2"
+    "deploy": "./deploy.sh",
+    "build:client": "cd client && npm run build",
+    "dev:server": "cd server && npm start",
+    "dev:client": "cd client && npm run dev"
   }
 }

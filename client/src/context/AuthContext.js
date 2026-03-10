@@ -36,26 +36,6 @@ export const AuthProvider = ({ children }) => {
     checkLoggedIn();
   }, []);
 
-  // Register user
-  const register = async (userData) => {
-    try {
-      const res = await api.post("/api/users", userData);
-
-      localStorage.setItem("token", res.data.token);
-      api.defaults.headers.common["Authorization"] = `Bearer ${res.data.token}`;
-
-      setUser(res.data);
-      setIsAuthenticated(true);
-
-      return { success: true };
-    } catch (err) {
-      return {
-        success: false,
-        error: err.response.data.message,
-      };
-    }
-  };
-
   // Login user
   const login = async (userData) => {
     try {
@@ -114,7 +94,6 @@ export const AuthProvider = ({ children }) => {
         isAuthenticated,
         user,
         loading,
-        register,
         login,
         logout,
         updateProfile,

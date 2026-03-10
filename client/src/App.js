@@ -4,17 +4,14 @@ import { AuthProvider, useAuth } from "./context/AuthContext";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import Login from "./pages/Login";
-import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import Profile from "./pages/Profile";
 import AppointmentForm from "./pages/AppointmentForm";
 import "./index.css";
 import Loading from "./components/Loading";
-import { useFirstTimeUser } from "./hooks/useFirstTimeUser";
 
 const PrivateRoute = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
-  const { hasLoggedInBefore } = useFirstTimeUser();
 
   if (loading) {
     return <Loading />;
@@ -22,10 +19,6 @@ const PrivateRoute = ({ children }) => {
 
   if (isAuthenticated) {
     return children;
-  }
-
-  if (!hasLoggedInBefore) {
-    return <Navigate to="/register" replace />;
   }
 
   return <Navigate to="/login" replace />;
@@ -40,7 +33,6 @@ function App() {
           <div className="container">
             <Routes>
               <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
               <Route
                 path="/dashboard"
                 element={

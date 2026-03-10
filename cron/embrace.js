@@ -1,10 +1,10 @@
-require("dotenv").config();
-const puppeteer = require("puppeteer");
+const puppeteer = require("puppeteer-core");
+const chromium = require("@sparticuz/chromium");
 const axios = require("axios");
 const { DateTime } = require("luxon");
 
 const findOpenTime = async (times) => {
-  const date = DateTime.fromJSDate(times[0])
+  const date = DateTime.fromISO(times[0])
     .setZone("America/Chicago")
     .toFormat("yyyy-MM-dd");
 
@@ -25,7 +25,7 @@ const findOpenTime = async (times) => {
       (c) =>
         c.available_spot_count > 0 &&
         times.some((t) => {
-          return DateTime.fromJSDate(t).equals(
+          return DateTime.fromISO(t).equals(
             DateTime.fromISO(c.start_datetime)
           );
         })
@@ -33,10 +33,10 @@ const findOpenTime = async (times) => {
     .sort(
       (a, b) =>
         times.findIndex((t) =>
-          DateTime.fromJSDate(t).equals(DateTime.fromISO(a.start_datetime))
+          DateTime.fromISO(t).equals(DateTime.fromISO(a.start_datetime))
         ) -
         times.findIndex((t) =>
-          DateTime.fromJSDate(t).equals(DateTime.fromISO(b.start_datetime))
+          DateTime.fromISO(t).equals(DateTime.fromISO(b.start_datetime))
         )
     );
 
@@ -44,7 +44,7 @@ const findOpenTime = async (times) => {
     console.log(
       `> no open times found for ${times
         .map((t) =>
-          DateTime.fromJSDate(t)
+          DateTime.fromISO(t)
             .setZone("America/Chicago")
             .toFormat("yyyy-MM-dd h:mm a")
         )
@@ -70,7 +70,10 @@ const getUserAccessToken = async (username, password) => {
   console.log("> fetching user token");
 
   const browser = await puppeteer.launch({
-    headless: true,
+    args: chromium.args,
+    defaultViewport: chromium.defaultViewport,
+    executablePath: await chromium.executablePath(),
+    headless: chromium.headless,
   });
 
   const page = await browser.newPage();
@@ -84,7 +87,6 @@ const getUserAccessToken = async (username, password) => {
   page.on("response", async (response) => {
     if (response.url().includes("/o/token")) {
       const body = await response.json();
-
       accessToken = body.access_token;
     }
   });
@@ -161,12 +163,11 @@ const makeReservation = async (classId, username, password) => {
       }
     );
   } catch (e) {
-    if (e.response.status === 422) {
-      // class already booked
+    if (e.response && e.response.status === 422) {
       console.error(e.response.data);
       console.log(`> class already booked: ${classId}`);
     } else {
-      throw e.response || error;
+      throw e.response || e;
     }
   }
 
