@@ -1,3 +1,22 @@
+/* ── Sticky footer layout ── */
+html,
+body,
+#root {
+  height: 100%;
+}
+
+.app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.container {
+  flex: 1;
+  padding-bottom: 2rem;
+}
+
+/* ── Checkbox ── */
 .checkbox-group {
   display: flex;
   align-items: center;
