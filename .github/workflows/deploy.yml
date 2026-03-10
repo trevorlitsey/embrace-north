@@ -1,0 +1,66 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - uses: aws-actions/setup-sam@v2
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: SAM build
+        run: sam build
+
+      - name: SAM deploy
+        run: |
+          sam deploy --config-env fun --no-confirm-changeset \
+            --parameter-overrides \
+              "JwtSecret=${{ secrets.JWT_SECRET }} \
+               EncryptionKey=${{ secrets.ENCRYPTION_KEY }} \
+               TwilioAccountSid=${{ secrets.TWILIO_ACCOUNT_SID }} \
+               TwilioAuthToken=${{ secrets.TWILIO_AUTH_TOKEN }} \
+               TwilioPhoneNumber=${{ secrets.TWILIO_PHONE_NUMBER }} \
+               CorsAllowedOrigins=https://embrace.trevor.fail,https://embrace.trevorlitsey.com"
+
+      - name: Get stack outputs
+        id: stack
+        run: |
+          API_URL=$(aws cloudformation describe-stacks --stack-name embrace-north \
+            --query 'Stacks[0].Outputs[?OutputKey==`ApiUrl`].OutputValue' --output text)
+          BUCKET=$(aws cloudformation describe-stacks --stack-name embrace-north \
+            --query 'Stacks[0].Outputs[?OutputKey==`ClientBucketName`].OutputValue' --output text)
+          CF_ID=$(aws cloudformation describe-stacks --stack-name embrace-north \
+            --query 'Stacks[0].Outputs[?OutputKey==`ClientDistributionId`].OutputValue' --output text)
+          echo "api_url=$API_URL" >> $GITHUB_OUTPUT
+          echo "bucket=$BUCKET" >> $GITHUB_OUTPUT
+          echo "cf_id=$CF_ID" >> $GITHUB_OUTPUT
+
+      - name: Build client
+        working-directory: client
+        run: |
+          npm ci
+          REACT_APP_API_URL=${{ steps.stack.outputs.api_url }} npm run build
+
+      - name: Sync to S3
+        run: aws s3 sync client/build/ s3://${{ steps.stack.outputs.bucket }} --delete
+
+      - name: Invalidate CloudFront
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id ${{ steps.stack.outputs.cf_id }} \
+            --paths "/*"
