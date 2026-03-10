@@ -100,6 +100,13 @@ Resources:
             TableName: !Ref UsersTable
         - DynamoDBCrudPolicy:
             TableName: !Ref AppointmentsTable
+        - Statement:
+            - Effect: Allow
+              Action: lambda:InvokeFunction
+              Resource: !GetAtt CronFunction.Arn
+      Environment:
+        Variables:
+          CRON_FUNCTION_NAME: !Ref CronFunction
       Events:
         ApiProxy:
           Type: HttpApi
