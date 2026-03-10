@@ -70,6 +70,12 @@ const Login = () => {
           {loading && <span className="btn-spinner" />}
           {loading ? "Logging in..." : "Login"}
         </button>
+        {loading && (
+          <p style={{ marginTop: "1rem", color: "#666", fontSize: "0.9rem" }}>
+            Hang tight — we have to actually log into the Embrace North UI to
+            verify your credentials, which is as annoying as it sounds.
+          </p>
+        )}
       </form>
     </div>
   );
