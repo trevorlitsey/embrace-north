@@ -85,6 +85,8 @@ Resources:
     Type: AWS::CertificateManager::Certificate
     Properties:
       DomainName: !Ref DomainName
+      SubjectAlternativeNames:
+        - embrace.trevorlitsey.com
       ValidationMethod: DNS
 
   # API Lambda
@@ -207,6 +209,7 @@ Resources:
         DefaultRootObject: index.html
         Aliases:
           - !Ref DomainName
+          - embrace.trevorlitsey.com
         ViewerCertificate:
           AcmCertificateArn: !Ref Certificate
           SslSupportMethod: sni-only
