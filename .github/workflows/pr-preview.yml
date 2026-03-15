@@ -1,0 +1,199 @@
+name: PR Preview
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, closed]
+
+permissions:
+  id-token: write
+  contents: read
+  pull-requests: write
+
+env:
+  AWS_REGION: us-east-1
+  STACK_NAME: embrace-north-pr-${{ github.event.pull_request.number }}
+  CLIENT_BUCKET: embrace-north-pr-${{ github.event.pull_request.number }}-client
+
+jobs:
+  deploy:
+    name: Deploy preview
+    runs-on: ubuntu-latest
+    if: github.event.action != 'closed'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - uses: aws-actions/setup-sam@v2
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: SAM build
+        run: sam build
+
+      - name: SAM deploy (backend)
+        run: |
+          sam deploy \
+            --config-env pr \
+            --stack-name ${{ env.STACK_NAME }} \
+            --no-confirm-changeset \
+            --parameter-overrides \
+              "JwtSecret=${{ secrets.JWT_SECRET }} \
+               EncryptionKey=${{ secrets.ENCRYPTION_KEY }} \
+               TwilioAccountSid=${{ secrets.TWILIO_ACCOUNT_SID }} \
+               TwilioAuthToken=${{ secrets.TWILIO_AUTH_TOKEN }} \
+               TwilioPhoneNumber=${{ vars.TWILIO_PHONE_NUMBER }} \
+               DeployFrontend=false \
+               EnableCron=false \
+               CorsAllowedOrigins=*"
+
+      - name: Get API URL
+        id: stack
+        run: |
+          API_URL=$(aws cloudformation describe-stacks \
+            --stack-name ${{ env.STACK_NAME }} \
+            --query 'Stacks[0].Outputs[?OutputKey==`ApiUrl`].OutputValue' \
+            --output text)
+          echo "api_url=$API_URL" >> $GITHUB_OUTPUT
+
+      - name: Create/configure S3 client bucket
+        run: |
+          BUCKET=${{ env.CLIENT_BUCKET }}
+          REGION=${{ env.AWS_REGION }}
+
+          # Create bucket (no-op if exists)
+          if ! aws s3api head-bucket --bucket "$BUCKET" 2>/dev/null; then
+            if [ "$REGION" = "us-east-1" ]; then
+              aws s3api create-bucket --bucket "$BUCKET" --region "$REGION"
+            else
+              aws s3api create-bucket --bucket "$BUCKET" --region "$REGION" \
+                --create-bucket-configuration LocationConstraint="$REGION"
+            fi
+          fi
+
+          # Enable public access
+          aws s3api delete-public-access-block --bucket "$BUCKET"
+
+          # Bucket policy: public read
+          aws s3api put-bucket-policy --bucket "$BUCKET" --policy "{
+            \"Version\": \"2012-10-17\",
+            \"Statement\": [{
+              \"Sid\": \"PublicRead\",
+              \"Effect\": \"Allow\",
+              \"Principal\": \"*\",
+              \"Action\": \"s3:GetObject\",
+              \"Resource\": \"arn:aws:s3:::$BUCKET/*\"
+            }]
+          }"
+
+          # Enable static website hosting
+          aws s3api put-bucket-website --bucket "$BUCKET" --website-configuration '{
+            "IndexDocument": {"Suffix": "index.html"},
+            "ErrorDocument": {"Key": "index.html"}
+          }'
+
+      - name: Build client
+        working-directory: client
+        run: |
+          npm ci
+          REACT_APP_API_URL=${{ steps.stack.outputs.api_url }} npm run build
+
+      - name: Sync client to S3
+        run: aws s3 sync client/build/ s3://${{ env.CLIENT_BUCKET }} --delete
+
+      - name: Post preview comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const apiUrl = '${{ steps.stack.outputs.api_url }}';
+            const stackName = '${{ env.STACK_NAME }}';
+            const clientBucket = '${{ env.CLIENT_BUCKET }}';
+            const region = '${{ env.AWS_REGION }}';
+            const sha = context.payload.pull_request.head.sha.slice(0, 7);
+            const clientUrl = `http://${clientBucket}.s3-website-${region}.amazonaws.com`;
+
+            const body = [
+              '## 🚀 Preview environment deployed',
+              '',
+              `| | |`,
+              `|---|---|`,
+              `| **UI** | [${clientUrl}](${clientUrl}) |`,
+              `| **API** | \`${apiUrl}\` |`,
+              `| **Stack** | \`${stackName}\` |`,
+              `| **Commit** | \`${sha}\` |`,
+              '',
+              '> Cron is disabled in preview envs. Tables and client bucket are isolated per PR.',
+            ].join('\n');
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+            });
+
+            const existing = comments.find(c =>
+              c.user.type === 'Bot' && c.body.includes('Preview environment deployed')
+            );
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.payload.pull_request.number,
+                body,
+              });
+            }
+
+  teardown:
+    name: Teardown preview
+    runs-on: ubuntu-latest
+    if: github.event.action == 'closed'
+
+    steps:
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Empty and delete client S3 bucket
+        run: |
+          BUCKET=${{ env.CLIENT_BUCKET }}
+          if aws s3api head-bucket --bucket "$BUCKET" 2>/dev/null; then
+            aws s3 rm s3://"$BUCKET" --recursive
+            aws s3api delete-bucket --bucket "$BUCKET"
+            echo "Client bucket $BUCKET deleted"
+          else
+            echo "Client bucket not found (already cleaned up): $BUCKET"
+          fi
+
+      - name: Delete backend stack
+        run: |
+          aws cloudformation delete-stack --stack-name ${{ env.STACK_NAME }}
+          aws cloudformation wait stack-delete-complete --stack-name ${{ env.STACK_NAME }} || true
+          echo "Stack ${{ env.STACK_NAME }} deleted"
+
+      - name: Post teardown comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              body: '🧹 Preview environment `${{ env.STACK_NAME }}` and client bucket have been torn down.',
+            });

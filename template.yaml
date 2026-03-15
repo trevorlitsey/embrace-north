@@ -28,6 +28,20 @@ Parameters:
     Type: String
     Default: ""
     Description: Twilio phone number in E.164 format (e.g. +15551234567)
+  DeployFrontend:
+    Type: String
+    Default: "true"
+    AllowedValues: ["true", "false"]
+    Description: Set to false to skip CloudFront/S3/ACM (e.g. for ephemeral PR stacks)
+  EnableCron:
+    Type: String
+    Default: "true"
+    AllowedValues: ["true", "false"]
+    Description: Set to false to disable the scheduled cron trigger (e.g. for ephemeral PR stacks)
+
+Conditions:
+  IsFrontendEnabled: !Equals [!Ref DeployFrontend, "true"]
+  IsCronEnabled: !Equals [!Ref EnableCron, "true"]
 
 Globals:
   Function:
@@ -35,8 +49,8 @@ Globals:
     Timeout: 30
     Environment:
       Variables:
-        USERS_TABLE: !Ref UsersTable
-        APPOINTMENTS_TABLE: !Ref AppointmentsTable
+        USERS_TABLE: !Sub "${AWS::StackName}-Users"
+        APPOINTMENTS_TABLE: !Sub "${AWS::StackName}-Appointments"
         JWT_SECRET: !Ref JwtSecret
         ENCRYPTION_KEY: !Ref EncryptionKey
         CORS_ALLOWED_ORIGINS: !Ref CorsAllowedOrigins
@@ -46,7 +60,7 @@ Resources:
   UsersTable:
     Type: AWS::DynamoDB::Table
     Properties:
-      TableName: EmbraceNorth-Users
+      TableName: !Sub "${AWS::StackName}-Users"
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
         - AttributeName: userId
@@ -67,7 +81,7 @@ Resources:
   AppointmentsTable:
     Type: AWS::DynamoDB::Table
     Properties:
-      TableName: EmbraceNorth-Appointments
+      TableName: !Sub "${AWS::StackName}-Appointments"
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
         - AttributeName: userId
@@ -83,6 +97,7 @@ Resources:
   # ACM Certificate (DNS-validated — cross-account validation required, see setup-dns.sh)
   Certificate:
     Type: AWS::CertificateManager::Certificate
+    Condition: IsFrontendEnabled
     Properties:
       DomainName: !Ref DomainName
       SubjectAlternativeNames:
@@ -163,19 +178,21 @@ Resources:
           Type: Schedule
           Properties:
             Schedule: rate(5 minutes)
-            Enabled: true
+            Enabled: !If [IsCronEnabled, true, false]
 
   # S3 Bucket for Client
   ClientBucket:
     Type: AWS::S3::Bucket
+    Condition: IsFrontendEnabled
     Properties:
-      BucketName: !Sub embrace-north-client-${AWS::AccountId}
+      BucketName: !Sub "embrace-north-client-${AWS::AccountId}"
       WebsiteConfiguration:
         IndexDocument: index.html
         ErrorDocument: index.html
 
   ClientBucketPolicy:
     Type: AWS::S3::BucketPolicy
+    Condition: IsFrontendEnabled
     Properties:
       Bucket: !Ref ClientBucket
       PolicyDocument:
@@ -185,14 +202,15 @@ Resources:
             Principal:
               Service: cloudfront.amazonaws.com
             Action: s3:GetObject
-            Resource: !Sub ${ClientBucket.Arn}/*
+            Resource: !Sub "${ClientBucket.Arn}/*"
             Condition:
               StringEquals:
-                AWS:SourceArn: !Sub arn:aws:cloudfront::${AWS::AccountId}:distribution/${ClientDistribution}
+                AWS:SourceArn: !Sub "arn:aws:cloudfront::${AWS::AccountId}:distribution/${ClientDistribution}"
 
   # CloudFront Origin Access Control
   CloudFrontOAC:
     Type: AWS::CloudFront::OriginAccessControl
+    Condition: IsFrontendEnabled
     Properties:
       OriginAccessControlConfig:
         Name: EmbraceNorth-OAC
@@ -203,6 +221,7 @@ Resources:
   # CloudFront Distribution
   ClientDistribution:
     Type: AWS::CloudFront::Distribution
+    Condition: IsFrontendEnabled
     Properties:
       DistributionConfig:
         Enabled: true
@@ -236,19 +255,24 @@ Resources:
 Outputs:
   ApiUrl:
     Description: API Gateway URL
-    Value: !Sub https://${HttpApi}.execute-api.${AWS::Region}.amazonaws.com
+    Value: !Sub "https://${HttpApi}.execute-api.${AWS::Region}.amazonaws.com"
   ClientBucketName:
+    Condition: IsFrontendEnabled
     Description: S3 bucket for client files
     Value: !Ref ClientBucket
   ClientDistributionUrl:
+    Condition: IsFrontendEnabled
     Description: CloudFront URL for the client
-    Value: !Sub https://${ClientDistribution.DomainName}
+    Value: !Sub "https://${ClientDistribution.DomainName}"
   ClientDistributionId:
+    Condition: IsFrontendEnabled
     Description: CloudFront distribution ID
     Value: !Ref ClientDistribution
   CloudFrontDomain:
+    Condition: IsFrontendEnabled
     Description: CloudFront domain name (for DNS CNAME)
     Value: !GetAtt ClientDistribution.DomainName
   CertificateArn:
+    Condition: IsFrontendEnabled
     Description: ACM certificate ARN
     Value: !Ref Certificate
