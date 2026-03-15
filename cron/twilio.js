@@ -20,4 +20,23 @@ const sendBookingNotification = async (phoneNumber, appointment) => {
   console.log(`> SMS sent to ${phoneNumber}`);
 };
 
-module.exports = { sendBookingNotification };
+const sendAvailabilityNotification = async (phoneNumber, appointment, availableSpots) => {
+  const client = twilio(
+    process.env.TWILIO_ACCOUNT_SID,
+    process.env.TWILIO_AUTH_TOKEN
+  );
+
+  const formattedTime = DateTime.fromISO(appointment.availableTime)
+    .setZone("America/Chicago")
+    .toFormat("EEEE, MMMM d, yyyy 'at' h:mm a");
+
+  await client.messages.create({
+    body: `ENWT: A spot is available at ${formattedTime} (${availableSpots} spot${availableSpots !== 1 ? "s" : ""} open). Open the app to book it.`,
+    from: process.env.TWILIO_PHONE_NUMBER,
+    to: `+1${phoneNumber}`,
+  });
+
+  console.log(`> availability SMS sent to ${phoneNumber}`);
+};
+
+module.exports = { sendBookingNotification, sendAvailabilityNotification };

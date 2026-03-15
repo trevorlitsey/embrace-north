@@ -25,12 +25,14 @@ const {
 // @access  Private
 const createAppointmentHandler = async (req, res) => {
   try {
-    const { times } = req.body;
+    const { times, autoBook = true, minSpots = 1 } = req.body;
 
     const appointment = await createAppointment({
       userId: req.user.userId,
       appointmentId: uuidv4(),
       times: times.sort(),
+      autoBook,
+      minSpots: parseInt(minSpots, 10) || 1,
     });
 
     res.status(201).json({ _id: appointment.appointmentId, ...appointment });
@@ -89,6 +91,12 @@ const updateAppointmentHandler = async (req, res) => {
       const updates = {};
       if (req.body.times) {
         updates.times = req.body.times.sort();
+      }
+      if (req.body.autoBook !== undefined) {
+        updates.autoBook = req.body.autoBook;
+      }
+      if (req.body.minSpots !== undefined) {
+        updates.minSpots = parseInt(req.body.minSpots, 10) || 1;
       }
 
       const updatedAppointment = await updateAppointment(

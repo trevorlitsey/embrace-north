@@ -9,6 +9,8 @@ const AppointmentForm = () => {
   const [formData, setFormData] = useState({
     date: new Date().toISOString().slice(0, 10),
     times: [options[0].value],
+    autoBook: true,
+    minSpots: 1,
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -31,6 +33,8 @@ const AppointmentForm = () => {
             times: times.map((t) =>
               DateTime.fromISO(t).setZone("America/Chicago").toFormat("HH:mm")
             ),
+            autoBook: res.data.autoBook !== false,
+            minSpots: res.data.minSpots || 1,
           });
         } catch (err) {
           const errorMessage =
@@ -48,7 +52,8 @@ const AppointmentForm = () => {
   }, [id, isEditMode]);
 
   const onChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const value = e.target.type === "checkbox" ? e.target.checked : e.target.value;
+    setFormData({ ...formData, [e.target.name]: value });
     // Clear error when user makes changes
     setError("");
   };
@@ -196,6 +201,52 @@ const AppointmentForm = () => {
           >
             Add Time Slot
           </button>
+        </div>
+
+        <div className="form-group">
+          <label>Booking Mode</label>
+          <div className="toggle-group">
+            <label className="toggle-option">
+              <input
+                type="radio"
+                name="autoBook"
+                value="true"
+                checked={formData.autoBook === true}
+                onChange={() => setFormData({ ...formData, autoBook: true })}
+              />
+              {" "}Auto-book — book automatically when a spot opens
+            </label>
+            <label className="toggle-option">
+              <input
+                type="radio"
+                name="autoBook"
+                value="false"
+                checked={formData.autoBook === false}
+                onChange={() => setFormData({ ...formData, autoBook: false })}
+              />
+              {" "}Notify only — text me when a spot opens, I'll book it myself
+            </label>
+          </div>
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="minSpots">Spots needed</label>
+          <p>
+            <small>
+              Only alert/book when this many spots are available at once (e.g. 2 if bringing a friend).
+            </small>
+          </p>
+          <select
+            id="minSpots"
+            name="minSpots"
+            value={formData.minSpots}
+            onChange={onChange}
+          >
+            <option value={1}>1 spot</option>
+            <option value={2}>2 spots</option>
+            <option value={3}>3 spots</option>
+            <option value={4}>4 spots</option>
+          </select>
         </div>
 
         <div className="form-actions">
