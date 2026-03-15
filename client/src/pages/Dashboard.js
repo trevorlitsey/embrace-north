@@ -93,10 +93,14 @@ const Dashboard = () => {
                     </li>
                   ))}
                 </ul>
+                <small style={{ color: "#888" }}>
+                  {appointment.autoBook === false ? "📩 Notify only" : "⚡ Auto-book"}
+                  {appointment.minSpots > 1 ? ` · ${appointment.minSpots} spots needed` : ""}
+                </small>
               </div>
 
               <div className="appointment-times">
-                <h4>Time Booked:</h4>
+                <h4>{appointment.autoBook === false ? "Status:" : "Time Booked:"}</h4>
                 {appointment.timeFulfilled ? (
                   <>
                     {DateTime.fromISO(appointment.timeFulfilled)
