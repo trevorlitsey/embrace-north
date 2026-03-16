@@ -11,10 +11,8 @@ const app = express();
 app.use(
   cors({
     origin: function (origin, callback) {
-      if (
-        !origin ||
-        (process.env.CORS_ALLOWED_ORIGINS || "").split(",").includes(origin)
-      ) {
+      const allowed = (process.env.CORS_ALLOWED_ORIGINS || "").split(",");
+      if (!origin || allowed.includes("*") || allowed.includes(origin)) {
         callback(null, true);
       } else {
         callback(new Error("Not allowed by CORS"));

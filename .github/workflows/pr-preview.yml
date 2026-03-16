@@ -44,6 +44,7 @@ jobs:
             --config-env pr \
             --stack-name ${{ env.STACK_NAME }} \
             --no-confirm-changeset \
+            --capabilities CAPABILITY_IAM \
             --parameter-overrides \
               "JwtSecret=${{ secrets.JWT_SECRET }} \
                EncryptionKey=${{ secrets.ENCRYPTION_KEY }} \
