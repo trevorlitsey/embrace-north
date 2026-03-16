@@ -226,7 +226,7 @@ const AppointmentForm = () => {
         {!formData.autoBook && (
           <div className="form-group">
             <label htmlFor="minSpots">Spots needed</label>
-            <small className="form-text">Bringing a friend? Require more than 1 open spot.</small>
+            <small className="form-text" style={{ marginBottom: "0.5rem", display: "block" }}>Bringing a friend? Require more than 1 open spot.</small>
             <select
               id="minSpots"
               name="minSpots"
