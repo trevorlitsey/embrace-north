@@ -55,6 +55,7 @@ jobs:
                TwilioPhoneNumber=${{ vars.TWILIO_PHONE_NUMBER }} \
                DeployFrontend=false \
                EnableCron=false \
+               DryRun=true \
                CorsAllowedOrigins=*"
 
       - name: Get API URL

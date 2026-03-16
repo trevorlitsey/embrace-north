@@ -38,6 +38,11 @@ Parameters:
     Default: "true"
     AllowedValues: ["true", "false"]
     Description: Set to false to disable the scheduled cron trigger (e.g. for ephemeral PR stacks)
+  DryRun:
+    Type: String
+    Default: "false"
+    AllowedValues: ["true", "false"]
+    Description: Set to true to skip real bookings (logs instead). Used in ephemeral PR environments.
 
 Conditions:
   IsFrontendEnabled: !Equals [!Ref DeployFrontend, "true"]
@@ -53,6 +58,7 @@ Globals:
         APPOINTMENTS_TABLE: !Sub "${AWS::StackName}-Appointments"
         JWT_SECRET: !Ref JwtSecret
         ENCRYPTION_KEY: !Ref EncryptionKey
+        DRY_RUN: !Ref DryRun
         CORS_ALLOWED_ORIGINS: !Ref CorsAllowedOrigins
 
 Resources:
