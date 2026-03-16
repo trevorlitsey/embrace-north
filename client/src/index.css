@@ -303,17 +303,7 @@ input[type="tel"]:focus {
   color: #aaa;
 }
 
-.btn-small.btn-danger {
-  border-color: #ccc;
-  color: #888;
-  background: white;
-}
 
-.btn-small.btn-danger:hover {
-  border-color: #dc3545;
-  color: #dc3545;
-  background: white;
-}
 
 /* ── Segmented control (booking mode toggle) ── */
 .segment-control {
