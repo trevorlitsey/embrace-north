@@ -123,7 +123,7 @@ Resources:
               Resource: !GetAtt CronFunction.Arn
       Environment:
         Variables:
-          CRON_FUNCTION_NAME: !Ref CronFunction
+          CRON_FUNCTION_NAME: !If [IsCronEnabled, !Ref CronFunction, ""]
       Events:
         ApiProxy:
           Type: HttpApi
