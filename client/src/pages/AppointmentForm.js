@@ -187,7 +187,7 @@ const AppointmentForm = () => {
                   className="btn-small btn-danger"
                   onClick={() => removeTimeSlot(index)}
                 >
-                  Remove
+                  × Remove
                 </button>
               )}
             </div>
