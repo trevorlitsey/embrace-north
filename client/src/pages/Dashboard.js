@@ -61,9 +61,11 @@ const Dashboard = () => {
             <div key={appointment._id} className="appointment-card">
               <div className="appointment-header">
                 <h3>
-                  {DateTime.fromISO(appointment.times[0])
-                    .setZone("America/Chicago")
-                    .toFormat("EEEE, MMMM d, yyyy")}
+                  {appointment.times?.[0]
+                    ? DateTime.fromISO(appointment.times[0])
+                        .setZone("America/Chicago")
+                        .toFormat("EEEE, MMMM d, yyyy")
+                    : "Unknown date"}
                 </h3>
                 <div className="appointment-actions">
                   {appointment.timeFulfilled ? null : (
