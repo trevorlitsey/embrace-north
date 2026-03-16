@@ -204,48 +204,39 @@ const AppointmentForm = () => {
         </div>
 
         <div className="form-group">
-          <label>Booking Mode</label>
-          <div className="toggle-group">
-            <label className="toggle-option">
-              <input
-                type="radio"
-                name="autoBook"
-                value="true"
-                checked={formData.autoBook === true}
-                onChange={() => setFormData({ ...formData, autoBook: true })}
-              />
-              {" "}Auto-book — book automatically when a spot opens
-            </label>
-            <label className="toggle-option">
-              <input
-                type="radio"
-                name="autoBook"
-                value="false"
-                checked={formData.autoBook === false}
-                onChange={() => setFormData({ ...formData, autoBook: false })}
-              />
-              {" "}Notify only — text me when a spot opens, I'll book it myself
-            </label>
+          <label>When a spot opens</label>
+          <div className="segment-control">
+            <button
+              type="button"
+              className={`segment-btn${formData.autoBook ? " active" : ""}`}
+              onClick={() => setFormData({ ...formData, autoBook: true })}
+            >
+              ⚡ Book it for me
+            </button>
+            <button
+              type="button"
+              className={`segment-btn${!formData.autoBook ? " active" : ""}`}
+              onClick={() => setFormData({ ...formData, autoBook: false })}
+            >
+              📩 Just text me
+            </button>
           </div>
         </div>
 
         <div className="form-group">
           <label htmlFor="minSpots">Spots needed</label>
-          <p>
-            <small>
-              Only alert/book when this many spots are available at once (e.g. 2 if bringing a friend).
-            </small>
-          </p>
+          <small className="form-text">Bringing a friend? Require more than 1 open spot.</small>
           <select
             id="minSpots"
             name="minSpots"
+            className="select-narrow"
             value={formData.minSpots}
             onChange={onChange}
           >
-            <option value={1}>1 spot</option>
-            <option value={2}>2 spots</option>
-            <option value={3}>3 spots</option>
-            <option value={4}>4 spots</option>
+            <option value={1}>1</option>
+            <option value={2}>2</option>
+            <option value={3}>3</option>
+            <option value={4}>4</option>
           </select>
         </div>
 
