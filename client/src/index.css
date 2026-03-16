@@ -304,13 +304,15 @@ input[type="tel"]:focus {
 }
 
 .btn-small.btn-danger {
-  border-color: #dc3545;
-  color: #dc3545;
+  border-color: #ccc;
+  color: #888;
+  background: white;
 }
 
 .btn-small.btn-danger:hover {
-  background: #dc3545;
-  color: white;
+  border-color: #dc3545;
+  color: #dc3545;
+  background: white;
 }
 
 /* ── Segmented control (booking mode toggle) ── */
