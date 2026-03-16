@@ -1,0 +1,352 @@
+name: PR Preview
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, closed]
+
+permissions:
+  id-token: write
+  contents: read
+  pull-requests: write
+
+env:
+  AWS_REGION: us-east-1
+  STACK_NAME: embrace-north-pr-${{ github.event.pull_request.number }}
+  CLIENT_BUCKET: embrace-north-pr-${{ github.event.pull_request.number }}-client
+  PR_DOMAIN: pr-${{ github.event.pull_request.number }}.embrace.trevor.fail
+
+jobs:
+  deploy:
+    name: Deploy preview
+    runs-on: ubuntu-latest
+    if: github.event.action != 'closed'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - uses: aws-actions/setup-sam@v2
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: SAM build
+        run: sam build
+
+      - name: SAM deploy (backend)
+        run: |
+          sam deploy \
+            --config-env pr \
+            --stack-name ${{ env.STACK_NAME }} \
+            --no-confirm-changeset \
+            --no-fail-on-empty-changeset \
+            --capabilities CAPABILITY_IAM \
+            --parameter-overrides \
+              "JwtSecret=${{ secrets.JWT_SECRET }} \
+               EncryptionKey=${{ secrets.ENCRYPTION_KEY }} \
+               TwilioAccountSid=${{ secrets.TWILIO_ACCOUNT_SID }} \
+               TwilioAuthToken=${{ secrets.TWILIO_AUTH_TOKEN }} \
+               TwilioPhoneNumber=${{ vars.TWILIO_PHONE_NUMBER }} \
+               DeployFrontend=false \
+               EnableCron=false \
+               DryRun=true \
+               CorsAllowedOrigins=*"
+
+      - name: Get API URL
+        id: stack
+        run: |
+          API_URL=$(aws cloudformation describe-stacks \
+            --stack-name ${{ env.STACK_NAME }} \
+            --query 'Stacks[0].Outputs[?OutputKey==`ApiUrl`].OutputValue' \
+            --output text)
+          echo "api_url=$API_URL" >> $GITHUB_OUTPUT
+
+      - name: Create/configure S3 client bucket
+        run: |
+          BUCKET=${{ env.CLIENT_BUCKET }}
+
+          # Create bucket (no-op if exists)
+          if ! aws s3api head-bucket --bucket "$BUCKET" 2>/dev/null; then
+            aws s3api create-bucket --bucket "$BUCKET" --region us-east-1
+          fi
+
+          # Block all public access (CloudFront OAC only)
+          aws s3api put-public-access-block --bucket "$BUCKET" \
+            --public-access-block-configuration "BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=true,RestrictPublicBuckets=true"
+
+      - name: Deploy CloudFront distribution for PR client
+        id: cf
+        run: |
+          BUCKET=${{ env.CLIENT_BUCKET }}
+          DOMAIN=${{ env.PR_DOMAIN }}
+          CERT_ARN=${{ vars.WILDCARD_CERT_ARN }}
+          PR_NUM=${{ github.event.pull_request.number }}
+
+          # Check if distribution already exists (re-push case)
+          EXISTING_ID=$(aws cloudfront list-distributions \
+            --query "DistributionList.Items[?Aliases.Items[?@=='$DOMAIN']].Id" \
+            --output text 2>/dev/null)
+
+          if [ -n "$EXISTING_ID" ] && [ "$EXISTING_ID" != "None" ]; then
+            echo "cf_id=$EXISTING_ID" >> $GITHUB_OUTPUT
+            CF_DOMAIN=$(aws cloudfront get-distribution --id "$EXISTING_ID" \
+              --query 'Distribution.DomainName' --output text)
+            echo "cf_domain=$CF_DOMAIN" >> $GITHUB_OUTPUT
+            echo "Reusing existing distribution $EXISTING_ID"
+          else
+            # Create OAC
+            OAC_ID=$(aws cloudfront create-origin-access-control \
+              --origin-access-control-config "{
+                \"Name\": \"embrace-north-pr-${PR_NUM}-oac\",
+                \"OriginAccessControlOriginType\": \"s3\",
+                \"SigningBehavior\": \"always\",
+                \"SigningProtocol\": \"sigv4\",
+                \"Description\": \"\"
+              }" --query 'OriginAccessControl.Id' --output text)
+
+            # Get bucket region domain
+            BUCKET_DOMAIN="${BUCKET}.s3.us-east-1.amazonaws.com"
+
+            # Create distribution
+            CF_RESULT=$(aws cloudfront create-distribution --distribution-config "{
+              \"CallerReference\": \"pr-${PR_NUM}-$(date +%s)\",
+              \"Aliases\": {\"Quantity\": 1, \"Items\": [\"${DOMAIN}\"]},
+              \"DefaultRootObject\": \"index.html\",
+              \"Origins\": {
+                \"Quantity\": 1,
+                \"Items\": [{
+                  \"Id\": \"S3Origin\",
+                  \"DomainName\": \"${BUCKET_DOMAIN}\",
+                  \"OriginAccessControlId\": \"${OAC_ID}\",
+                  \"S3OriginConfig\": {\"OriginAccessIdentity\": \"\"}
+                }]
+              },
+              \"DefaultCacheBehavior\": {
+                \"TargetOriginId\": \"S3Origin\",
+                \"ViewerProtocolPolicy\": \"redirect-to-https\",
+                \"AllowedMethods\": {\"Quantity\": 2, \"Items\": [\"GET\", \"HEAD\"], \"CachedMethods\": {\"Quantity\": 2, \"Items\": [\"GET\", \"HEAD\"]}},
+                \"ForwardedValues\": {\"QueryString\": false, \"Cookies\": {\"Forward\": \"none\"}},
+                \"MinTTL\": 0
+              },
+              \"CustomErrorResponses\": {
+                \"Quantity\": 2,
+                \"Items\": [
+                  {\"ErrorCode\": 403, \"ResponseCode\": \"200\", \"ResponsePagePath\": \"/index.html\", \"ErrorCachingMinTTL\": 0},
+                  {\"ErrorCode\": 404, \"ResponseCode\": \"200\", \"ResponsePagePath\": \"/index.html\", \"ErrorCachingMinTTL\": 0}
+                ]
+              },
+              \"ViewerCertificate\": {
+                \"ACMCertificateArn\": \"${CERT_ARN}\",
+                \"SSLSupportMethod\": \"sni-only\",
+                \"MinimumProtocolVersion\": \"TLSv1.2_2021\"
+              },
+              \"Enabled\": true,
+              \"Comment\": \"embrace-north PR ${PR_NUM} preview\"
+            }")
+
+            CF_ID=$(echo "$CF_RESULT" | python3 -c "import json,sys; print(json.load(sys.stdin)['Distribution']['Id'])")
+            CF_DOMAIN=$(echo "$CF_RESULT" | python3 -c "import json,sys; print(json.load(sys.stdin)['Distribution']['DomainName'])")
+            echo "cf_id=$CF_ID" >> $GITHUB_OUTPUT
+            echo "cf_domain=$CF_DOMAIN" >> $GITHUB_OUTPUT
+
+            # Grant CloudFront OAC access to S3 bucket
+            aws s3api put-bucket-policy --bucket "$BUCKET" --policy "{
+              \"Version\": \"2012-10-17\",
+              \"Statement\": [{
+                \"Sid\": \"AllowCloudFrontAccess\",
+                \"Effect\": \"Allow\",
+                \"Principal\": {\"Service\": \"cloudfront.amazonaws.com\"},
+                \"Action\": \"s3:GetObject\",
+                \"Resource\": \"arn:aws:s3:::${BUCKET}/*\",
+                \"Condition\": {\"StringEquals\": {\"AWS:SourceArn\": \"arn:aws:cloudfront::${{ vars.AWS_ACCOUNT_ID }}:distribution/${CF_ID}\"}}
+              }]
+            }"
+
+            echo "Created distribution $CF_ID → $CF_DOMAIN"
+          fi
+
+      - name: Create/update Route53 DNS record
+        run: |
+          HOSTED_ZONE_ID=${{ vars.HOSTED_ZONE_ID }}
+          DOMAIN=${{ env.PR_DOMAIN }}
+          CF_DOMAIN=${{ steps.cf.outputs.cf_domain }}
+
+          aws route53 change-resource-record-sets \
+            --hosted-zone-id "$HOSTED_ZONE_ID" \
+            --change-batch "{
+              \"Changes\": [{
+                \"Action\": \"UPSERT\",
+                \"ResourceRecordSet\": {
+                  \"Name\": \"${DOMAIN}\",
+                  \"Type\": \"CNAME\",
+                  \"TTL\": 60,
+                  \"ResourceRecords\": [{\"Value\": \"${CF_DOMAIN}\"}]
+                }
+              }]
+            }"
+          echo "DNS: ${DOMAIN} → ${CF_DOMAIN}"
+
+      - name: Build client
+        working-directory: client
+        run: |
+          npm ci
+          REACT_APP_API_URL=${{ steps.stack.outputs.api_url }} npm run build
+
+      - name: Sync client to S3 + invalidate CloudFront
+        run: |
+          aws s3 sync client/build/ s3://${{ env.CLIENT_BUCKET }} --delete
+          aws cloudfront create-invalidation \
+            --distribution-id ${{ steps.cf.outputs.cf_id }} \
+            --paths "/*"
+
+      - name: Post preview comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const apiUrl = '${{ steps.stack.outputs.api_url }}';
+            const stackName = '${{ env.STACK_NAME }}';
+            const domain = '${{ env.PR_DOMAIN }}';
+            const sha = context.payload.pull_request.head.sha.slice(0, 7);
+            const clientUrl = `https://${domain}`;
+
+            const body = [
+              '## 🚀 Preview environment deployed',
+              '',
+              `| | |`,
+              `|---|---|`,
+              `| **UI** | [${clientUrl}](${clientUrl}) |`,
+              `| **API** | \`${apiUrl}\` |`,
+              `| **Stack** | \`${stackName}\` |`,
+              `| **Commit** | \`${sha}\` |`,
+              '',
+              '> Cron is disabled in preview envs. Tables and client bucket are isolated per PR.',
+            ].join('\n');
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+            });
+
+            const existing = comments.find(c =>
+              c.user.type === 'Bot' && c.body.includes('Preview environment deployed')
+            );
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.payload.pull_request.number,
+                body,
+              });
+            }
+
+  teardown:
+    name: Teardown preview
+    runs-on: ubuntu-latest
+    if: github.event.action == 'closed'
+
+    steps:
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Disable + delete CloudFront distribution
+        run: |
+          DOMAIN=${{ env.PR_DOMAIN }}
+
+          CF_ID=$(aws cloudfront list-distributions \
+            --query "DistributionList.Items[?Aliases.Items[?@=='$DOMAIN']].Id" \
+            --output text 2>/dev/null)
+
+          if [ -n "$CF_ID" ] && [ "$CF_ID" != "None" ]; then
+            # Get current config + etag
+            CONFIG=$(aws cloudfront get-distribution-config --id "$CF_ID")
+            ETAG=$(echo "$CONFIG" | python3 -c "import json,sys; print(json.load(sys.stdin)['ETag'])")
+            DIST_CONFIG=$(echo "$CONFIG" | python3 -c "import json,sys; d=json.load(sys.stdin)['DistributionConfig']; d['Enabled']=False; print(json.dumps(d))")
+
+            # Disable first
+            aws cloudfront update-distribution --id "$CF_ID" \
+              --distribution-config "$DIST_CONFIG" --if-match "$ETAG" > /dev/null
+            echo "Waiting for distribution to deploy (disabled)..."
+            aws cloudfront wait distribution-deployed --id "$CF_ID"
+
+            # Now delete
+            ETAG=$(aws cloudfront get-distribution-config --id "$CF_ID" \
+              --query 'ETag' --output text)
+            aws cloudfront delete-distribution --id "$CF_ID" --if-match "$ETAG"
+            echo "CloudFront distribution $CF_ID deleted"
+          else
+            echo "No CloudFront distribution found for $DOMAIN"
+          fi
+
+      - name: Delete Route53 DNS record
+        run: |
+          HOSTED_ZONE_ID=${{ vars.HOSTED_ZONE_ID }}
+          DOMAIN=${{ env.PR_DOMAIN }}
+
+          RECORD=$(aws route53 list-resource-record-sets \
+            --hosted-zone-id "$HOSTED_ZONE_ID" \
+            --query "ResourceRecordSets[?Name=='${DOMAIN}.']" \
+            --output json)
+
+          if [ "$(echo "$RECORD" | python3 -c "import json,sys; print(len(json.load(sys.stdin)))")" -gt "0" ]; then
+            VALUE=$(echo "$RECORD" | python3 -c "import json,sys; r=json.load(sys.stdin)[0]; print(r['ResourceRecords'][0]['Value'])")
+            aws route53 change-resource-record-sets \
+              --hosted-zone-id "$HOSTED_ZONE_ID" \
+              --change-batch "{
+                \"Changes\": [{
+                  \"Action\": \"DELETE\",
+                  \"ResourceRecordSet\": {
+                    \"Name\": \"${DOMAIN}\",
+                    \"Type\": \"CNAME\",
+                    \"TTL\": 60,
+                    \"ResourceRecords\": [{\"Value\": \"${VALUE}\"}]
+                  }
+                }]
+              }"
+            echo "DNS record $DOMAIN deleted"
+          fi
+
+      - name: Empty and delete client S3 bucket
+        run: |
+          BUCKET=${{ env.CLIENT_BUCKET }}
+          if aws s3api head-bucket --bucket "$BUCKET" 2>/dev/null; then
+            aws s3 rm s3://"$BUCKET" --recursive
+            aws s3api delete-bucket --bucket "$BUCKET"
+            echo "Client bucket $BUCKET deleted"
+          else
+            echo "Client bucket not found (already cleaned up): $BUCKET"
+          fi
+
+      - name: Delete backend stack
+        run: |
+          aws cloudformation delete-stack --stack-name ${{ env.STACK_NAME }}
+          aws cloudformation wait stack-delete-complete --stack-name ${{ env.STACK_NAME }} || true
+          echo "Stack ${{ env.STACK_NAME }} deleted"
+
+      - name: Post teardown comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              body: '🧹 Preview environment `${{ env.STACK_NAME }}` and client bucket have been torn down.',
+            });

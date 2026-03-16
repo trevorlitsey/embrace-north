@@ -5,11 +5,11 @@
   "main": "handler.js",
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.750.0",
-    "@aws-sdk/client-sns": "^3.750.0",
     "@aws-sdk/lib-dynamodb": "^3.750.0",
     "@sparticuz/chromium": "^131.0.0",
     "axios": "^1.7.9",
     "luxon": "^3.5.0",
-    "puppeteer-core": "^24.2.1"
+    "puppeteer-core": "^24.2.1",
+    "twilio": "^5.0.0"
   }
 }

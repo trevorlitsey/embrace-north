@@ -11,6 +11,46 @@ Parameters:
   CorsAllowedOrigins:
     Type: String
     Default: '*'
+  DomainName:
+    Type: String
+    Default: embrace.trevor.fail
+    Description: Custom domain for the client
+  TwilioAccountSid:
+    Type: String
+    Default: ''
+    NoEcho: true
+  TwilioAuthToken:
+    Type: String
+    Default: ''
+    NoEcho: true
+  TwilioPhoneNumber:
+    Type: String
+    Default: ''
+    Description: Twilio phone number in E.164 format (e.g. +15551234567)
+  DeployFrontend:
+    Type: String
+    Default: 'true'
+    AllowedValues:
+    - 'true'
+    - 'false'
+    Description: Set to false to skip CloudFront/S3/ACM (e.g. for ephemeral PR stacks)
+  EnableCron:
+    Type: String
+    Default: 'true'
+    AllowedValues:
+    - 'true'
+    - 'false'
+    Description: Set to false to disable the scheduled cron trigger (e.g. for ephemeral
+      PR stacks)
+Conditions:
+  IsFrontendEnabled:
+    Fn::Equals:
+    - Ref: DeployFrontend
+    - 'true'
+  IsCronEnabled:
+    Fn::Equals:
+    - Ref: EnableCron
+    - 'true'
 Globals:
   Function:
     Runtime: nodejs20.x
@@ -18,9 +58,9 @@ Globals:
     Environment:
       Variables:
         USERS_TABLE:
-          Ref: UsersTable
+          Fn::Sub: ${AWS::StackName}-Users
         APPOINTMENTS_TABLE:
-          Ref: AppointmentsTable
+          Fn::Sub: ${AWS::StackName}-Appointments
         JWT_SECRET:
           Ref: JwtSecret
         ENCRYPTION_KEY:
@@ -31,7 +71,8 @@ Resources:
   UsersTable:
     Type: AWS::DynamoDB::Table
     Properties:
-      TableName: EmbraceNorth-Users
+      TableName:
+        Fn::Sub: ${AWS::StackName}-Users
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
       - AttributeName: userId
@@ -51,7 +92,8 @@ Resources:
   AppointmentsTable:
     Type: AWS::DynamoDB::Table
     Properties:
-      TableName: EmbraceNorth-Appointments
+      TableName:
+        Fn::Sub: ${AWS::StackName}-Appointments
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
       - AttributeName: userId
@@ -63,6 +105,15 @@ Resources:
         KeyType: HASH
       - AttributeName: appointmentId
         KeyType: RANGE
+  Certificate:
+    Type: AWS::CertificateManager::Certificate
+    Condition: IsFrontendEnabled
+    Properties:
+      DomainName:
+        Ref: DomainName
+      SubjectAlternativeNames:
+      - embrace.trevorlitsey.com
+      ValidationMethod: DNS
   ApiFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -77,6 +128,17 @@ Resources:
       - DynamoDBCrudPolicy:
           TableName:
             Ref: AppointmentsTable
+      - Statement:
+        - Effect: Allow
+          Action: lambda:InvokeFunction
+          Resource:
+            Fn::GetAtt:
+            - CronFunction
+            - Arn
+      Environment:
+        Variables:
+          CRON_FUNCTION_NAME:
+            Ref: CronFunction
       Events:
         ApiProxy:
           Type: HttpApi
@@ -100,7 +162,9 @@ Resources:
       StageName: $default
       CorsConfiguration:
         AllowOrigins:
-        - '*'
+          Fn::Split:
+          - ','
+          - Ref: CorsAllowedOrigins
         AllowHeaders:
         - Content-Type
         - Authorization
@@ -124,21 +188,29 @@ Resources:
       - DynamoDBCrudPolicy:
           TableName:
             Ref: AppointmentsTable
-      - Statement:
-        - Effect: Allow
-          Action:
-          - sns:Publish
-          Resource: '*'
+      Environment:
+        Variables:
+          TWILIO_ACCOUNT_SID:
+            Ref: TwilioAccountSid
+          TWILIO_AUTH_TOKEN:
+            Ref: TwilioAuthToken
+          TWILIO_PHONE_NUMBER:
+            Ref: TwilioPhoneNumber
       Events:
         ScheduleEvent:
           Type: Schedule
           Properties:
             Schedule: rate(5 minutes)
-            Enabled: true
+            Enabled:
+              Fn::If:
+              - IsCronEnabled
+              - true
+              - false
     Metadata:
       SamResourceId: CronFunction
   ClientBucket:
     Type: AWS::S3::Bucket
+    Condition: IsFrontendEnabled
     Properties:
       BucketName:
         Fn::Sub: embrace-north-client-${AWS::AccountId}
@@ -147,6 +219,7 @@ Resources:
         ErrorDocument: index.html
   ClientBucketPolicy:
     Type: AWS::S3::BucketPolicy
+    Condition: IsFrontendEnabled
     Properties:
       Bucket:
         Ref: ClientBucket
@@ -165,6 +238,7 @@ Resources:
                 Fn::Sub: arn:aws:cloudfront::${AWS::AccountId}:distribution/${ClientDistribution}
   CloudFrontOAC:
     Type: AWS::CloudFront::OriginAccessControl
+    Condition: IsFrontendEnabled
     Properties:
       OriginAccessControlConfig:
         Name: EmbraceNorth-OAC
@@ -173,10 +247,19 @@ Resources:
         SigningProtocol: sigv4
   ClientDistribution:
     Type: AWS::CloudFront::Distribution
+    Condition: IsFrontendEnabled
     Properties:
       DistributionConfig:
         Enabled: true
         DefaultRootObject: index.html
+        Aliases:
+        - Ref: DomainName
+        - embrace.trevorlitsey.com
+        ViewerCertificate:
+          AcmCertificateArn:
+            Ref: Certificate
+          SslSupportMethod: sni-only
+          MinimumProtocolVersion: TLSv1.2_2021
         Origins:
         - Id: S3Origin
           DomainName:
@@ -205,14 +288,29 @@ Outputs:
     Value:
       Fn::Sub: https://${HttpApi}.execute-api.${AWS::Region}.amazonaws.com
   ClientBucketName:
+    Condition: IsFrontendEnabled
     Description: S3 bucket for client files
     Value:
       Ref: ClientBucket
   ClientDistributionUrl:
+    Condition: IsFrontendEnabled
     Description: CloudFront URL for the client
     Value:
       Fn::Sub: https://${ClientDistribution.DomainName}
   ClientDistributionId:
+    Condition: IsFrontendEnabled
     Description: CloudFront distribution ID
     Value:
       Ref: ClientDistribution
+  CloudFrontDomain:
+    Condition: IsFrontendEnabled
+    Description: CloudFront domain name (for DNS CNAME)
+    Value:
+      Fn::GetAtt:
+      - ClientDistribution
+      - DomainName
+  CertificateArn:
+    Condition: IsFrontendEnabled
+    Description: ACM certificate ARN
+    Value:
+      Ref: Certificate

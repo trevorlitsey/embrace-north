@@ -2,7 +2,6 @@
 import React from "react";
 import { useAuth } from "../context/AuthContext";
 import NotificationSettings from "../components/NotificationSettings";
-import PasswordChange from "../components/PasswordChange";
 
 const Profile = () => {
   const { updateProfile, user } = useAuth();
@@ -14,7 +13,6 @@ const Profile = () => {
         <h2>Username: {user.username}</h2>
       </div>
       <NotificationSettings user={user} updateProfile={updateProfile} />
-      <PasswordChange updateProfile={updateProfile} />
     </div>
   );
 };

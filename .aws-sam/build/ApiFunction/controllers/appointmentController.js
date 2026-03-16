@@ -1,4 +1,17 @@
 const { v4: uuidv4 } = require("uuid");
+const { LambdaClient, InvokeCommand } = require("@aws-sdk/client-lambda");
+
+const lambdaClient = new LambdaClient({});
+
+const triggerCronCheck = () => {
+  if (!process.env.CRON_FUNCTION_NAME) return;
+  lambdaClient
+    .send(new InvokeCommand({
+      FunctionName: process.env.CRON_FUNCTION_NAME,
+      InvocationType: "Event",
+    }))
+    .catch((err) => console.error("Failed to trigger cron check:", err));
+};
 const {
   createAppointment,
   getAppointmentsByUserId,
@@ -21,6 +34,7 @@ const createAppointmentHandler = async (req, res) => {
     });
 
     res.status(201).json({ _id: appointment.appointmentId, ...appointment });
+    triggerCronCheck();
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
