@@ -63,11 +63,17 @@ exports.handler = async () => {
             continue;
           }
 
-          await makeReservation(
-            classId,
-            user.username,
-            decrypt(user.password)
-          );
+          if (process.env.DRY_RUN === "true") {
+            console.log(
+              `> [DRY RUN] Would have booked classId=${classId} time=${timeToBook} for user=${appointment.userId} — skipping real reservation`
+            );
+          } else {
+            await makeReservation(
+              classId,
+              user.username,
+              decrypt(user.password)
+            );
+          }
 
           // Update appointment as fulfilled
           await docClient.send(
