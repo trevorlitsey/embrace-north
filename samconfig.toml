@@ -18,3 +18,15 @@ parameter_overrides = [
   "CorsAllowedOrigins=https://embrace.trevor.fail",
   "DomainName=embrace.trevor.fail",
 ]
+
+# PR ephemeral env profile — stack name is overridden per-PR via CLI
+[pr.deploy.parameters]
+resolve_s3 = true
+capabilities = ["CAPABILITY_IAM"]
+region = "us-east-1"
+confirm_changeset = false
+parameter_overrides = [
+  "DeployFrontend=false",
+  "EnableCron=false",
+  "CorsAllowedOrigins=*",
+]

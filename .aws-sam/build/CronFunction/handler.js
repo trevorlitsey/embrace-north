@@ -7,7 +7,7 @@ const {
 } = require("@aws-sdk/lib-dynamodb");
 const { decrypt } = require("./encryption");
 const { makeReservation, findOpenTime } = require("./embrace");
-const { sendBookingNotification } = require("./sns");
+const { sendBookingNotification } = require("./twilio");
 
 const client = new DynamoDBClient({});
 const docClient = DynamoDBDocumentClient.from(client, {
