@@ -218,27 +218,29 @@ const AppointmentForm = () => {
               className={`segment-btn${!formData.autoBook ? " active" : ""}`}
               onClick={() => setFormData({ ...formData, autoBook: false })}
             >
-              📩 Just text me
+              📩 Just text me that my spots are open
             </button>
           </div>
         </div>
 
-        <div className="form-group">
-          <label htmlFor="minSpots">Spots needed</label>
-          <small className="form-text">Bringing a friend? Require more than 1 open spot.</small>
-          <select
-            id="minSpots"
-            name="minSpots"
-            className="select-narrow"
-            value={formData.minSpots}
-            onChange={onChange}
-          >
-            <option value={1}>1</option>
-            <option value={2}>2</option>
-            <option value={3}>3</option>
-            <option value={4}>4</option>
-          </select>
-        </div>
+        {!formData.autoBook && (
+          <div className="form-group">
+            <label htmlFor="minSpots">Spots needed</label>
+            <small className="form-text">Bringing a friend? Require more than 1 open spot.</small>
+            <select
+              id="minSpots"
+              name="minSpots"
+              className="select-narrow"
+              value={formData.minSpots}
+              onChange={onChange}
+            >
+              <option value={1}>1</option>
+              <option value={2}>2</option>
+              <option value={3}>3</option>
+              <option value={4}>4</option>
+            </select>
+          </div>
+        )}
 
         <div className="form-actions">
           <button
