@@ -96,7 +96,7 @@ const Dashboard = () => {
                   ))}
                 </ul>
                 <small style={{ color: "#888" }}>
-                  {appointment.autoBook === false ? "📩 Notify only" : "⚡ Auto-book"}
+                  {appointment.autoBook === false ? "💬 Notify only" : "⚡ Auto-book"}
                   {appointment.minSpots > 1 ? ` · ${appointment.minSpots} spots needed` : ""}
                 </small>
               </div>
