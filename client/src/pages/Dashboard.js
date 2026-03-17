@@ -61,9 +61,11 @@ const Dashboard = () => {
             <div key={appointment._id} className="appointment-card">
               <div className="appointment-header">
                 <h3>
-                  {DateTime.fromISO(appointment.times[0])
-                    .setZone("America/Chicago")
-                    .toFormat("EEEE, MMMM d, yyyy")}
+                  {appointment.times?.[0]
+                    ? DateTime.fromISO(appointment.times[0])
+                        .setZone("America/Chicago")
+                        .toFormat("EEEE, MMMM d, yyyy")
+                    : "Unknown date"}
                 </h3>
                 <div className="appointment-actions">
                   {appointment.timeFulfilled ? null : (
@@ -93,10 +95,14 @@ const Dashboard = () => {
                     </li>
                   ))}
                 </ul>
+                <small style={{ color: "#888" }}>
+                  {appointment.autoBook === false ? "💬 Notify only" : "⚡ Auto-book"}
+                  {appointment.minSpots > 1 ? ` · ${appointment.minSpots} spots needed` : ""}
+                </small>
               </div>
 
               <div className="appointment-times">
-                <h4>Time Booked:</h4>
+                <h4>{appointment.autoBook === false ? "Status:" : "Time Booked:"}</h4>
                 {appointment.timeFulfilled ? (
                   <>
                     {DateTime.fromISO(appointment.timeFulfilled)
@@ -115,9 +121,18 @@ const Dashboard = () => {
                       </>
                     ) : null}
                   </>
+                ) : appointment.autoBook === false && appointment.lastNotifiedAt ? (
+                  <i>
+                    Texted{" "}
+                    {DateTime.fromISO(appointment.lastNotifiedAt)
+                      .setZone("America/Chicago")
+                      .toRelative()}
+                  </i>
                 ) : (
                   <i>
-                    No time booked yet.{" "}
+                    {appointment.autoBook === false
+                      ? "Waiting for open spots..."
+                      : "No time booked yet."}{" "}
                     {(() => {
                       const base = appointment.lastChecked
                         ? DateTime.fromISO(appointment.lastChecked)

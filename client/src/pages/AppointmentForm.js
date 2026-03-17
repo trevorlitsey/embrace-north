@@ -1,14 +1,19 @@
 // File: src/pages/AppointmentForm.js
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 import api from "../utils/api";
 import options from "./options.json";
 import { DateTime } from "luxon";
 
 const AppointmentForm = () => {
+  const { user } = useAuth();
+  const hasPhone = !!(user?.phoneNumber);
   const [formData, setFormData] = useState({
     date: new Date().toISOString().slice(0, 10),
     times: [options[0].value],
+    autoBook: true,
+    minSpots: 1,
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -31,6 +36,8 @@ const AppointmentForm = () => {
             times: times.map((t) =>
               DateTime.fromISO(t).setZone("America/Chicago").toFormat("HH:mm")
             ),
+            autoBook: res.data.autoBook !== false,
+            minSpots: res.data.minSpots || 1,
           });
         } catch (err) {
           const errorMessage =
@@ -48,7 +55,8 @@ const AppointmentForm = () => {
   }, [id, isEditMode]);
 
   const onChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const value = e.target.type === "checkbox" ? e.target.checked : e.target.value;
+    setFormData({ ...formData, [e.target.name]: value });
     // Clear error when user makes changes
     setError("");
   };
@@ -182,7 +190,7 @@ const AppointmentForm = () => {
                   className="btn-small btn-danger"
                   onClick={() => removeTimeSlot(index)}
                 >
-                  Remove
+                  × Remove
                 </button>
               )}
             </div>
@@ -197,6 +205,47 @@ const AppointmentForm = () => {
             Add Time Slot
           </button>
         </div>
+
+        <div className="form-group">
+          <label>When a spot opens</label>
+          <div className="segment-control">
+            <button
+              type="button"
+              className={`segment-btn${formData.autoBook ? " active" : ""}`}
+              onClick={() => setFormData({ ...formData, autoBook: true })}
+            >
+              ⚡ Book it for me
+            </button>
+            <button
+              type="button"
+              className={`segment-btn${!formData.autoBook ? " active" : ""}`}
+              onClick={() => hasPhone && setFormData({ ...formData, autoBook: false })}
+              disabled={!hasPhone}
+              title={!hasPhone ? "Add a phone number in your profile to use this option" : undefined}
+            >
+              💬 Just text me that my spots are open
+            </button>
+          </div>
+        </div>
+
+        {!formData.autoBook && (
+          <div className="form-group">
+            <label htmlFor="minSpots">Spots needed</label>
+            <small className="form-text" style={{ marginBottom: "0.5rem", display: "block" }}>Bringing a friend? Require more than 1 open spot.</small>
+            <select
+              id="minSpots"
+              name="minSpots"
+              className="select-narrow"
+              value={formData.minSpots}
+              onChange={onChange}
+            >
+              <option value={1}>1</option>
+              <option value={2}>2</option>
+              <option value={3}>3</option>
+              <option value={4}>4</option>
+            </select>
+          </div>
+        )}
 
         <div className="form-actions">
           <button

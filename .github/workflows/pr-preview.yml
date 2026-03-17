@@ -54,7 +54,7 @@ jobs:
                TwilioAuthToken=${{ secrets.TWILIO_AUTH_TOKEN }} \
                TwilioPhoneNumber=${{ vars.TWILIO_PHONE_NUMBER }} \
                DeployFrontend=false \
-               EnableCron=false \
+               EnableCron=true \
                DryRun=true \
                CorsAllowedOrigins=*"
 

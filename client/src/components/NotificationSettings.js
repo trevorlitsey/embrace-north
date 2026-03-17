@@ -7,6 +7,7 @@ const NotificationSettings = ({ user, updateProfile }) => {
   });
   const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -21,6 +22,7 @@ const NotificationSettings = ({ user, updateProfile }) => {
     e.preventDefault();
     setSuccess("");
     setError("");
+    setLoading(true);
 
     try {
       const result = await updateProfile({
@@ -37,6 +39,8 @@ const NotificationSettings = ({ user, updateProfile }) => {
       setError(
         err.response?.data?.message || "Failed to update notification settings"
       );
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -79,13 +83,12 @@ const NotificationSettings = ({ user, updateProfile }) => {
             </label>
           </div>
           <small className="form-text text-muted">
-            You will receive a text message when any of your appointments are
-            successfully booked.
+            Enable text notifications to receive alerts about your appointments.
           </small>
         </div>
 
-        <button type="submit" className="btn btn-primary">
-          Update Notification Settings
+        <button type="submit" className="btn btn-primary" disabled={loading}>
+          {loading ? <><span className="btn-spinner" />Saving...</> : "Update Notification Settings"}
         </button>
       </form>
     </div>

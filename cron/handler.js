@@ -7,7 +7,7 @@ const {
 } = require("@aws-sdk/lib-dynamodb");
 const { decrypt } = require("./encryption");
 const { makeReservation, findOpenTime } = require("./embrace");
-const { sendBookingNotification } = require("./twilio");
+const { sendBookingNotification, sendAvailabilityNotification } = require("./twilio");
 
 const client = new DynamoDBClient({});
 const docClient = DynamoDBDocumentClient.from(client, {
@@ -44,7 +44,10 @@ exports.handler = async () => {
 
     for (const appointment of appointments) {
       try {
-        const [classId, timeToBook] = await findOpenTime(appointment.times);
+        const minSpots = appointment.minSpots || 1;
+        const autoBook = appointment.autoBook !== false; // default true
+        const result = await findOpenTime(appointment.times, minSpots);
+        const [classId, timeToBook, availableSpots] = result;
 
         if (classId) {
           // Get user credentials
@@ -63,41 +66,90 @@ exports.handler = async () => {
             continue;
           }
 
-          if (process.env.DRY_RUN === "true") {
-            console.log(
-              `> [DRY RUN] Would have booked classId=${classId} time=${timeToBook} for user=${appointment.userId} — skipping real reservation`
+          if (autoBook) {
+            // Auto-book mode: make reservation and mark fulfilled
+            if (process.env.DRY_RUN === "true") {
+              console.log(
+                `> [DRY RUN] Would have booked classId=${classId} time=${timeToBook} for user=${appointment.userId} — skipping real reservation`
+              );
+            } else {
+              await makeReservation(
+                classId,
+                user.username,
+                decrypt(user.password)
+              );
+            }
+
+            // Update appointment as fulfilled
+            await docClient.send(
+              new UpdateCommand({
+                TableName: APPOINTMENTS_TABLE,
+                Key: {
+                  userId: appointment.userId,
+                  appointmentId: appointment.appointmentId,
+                },
+                UpdateExpression:
+                  "SET timeFulfilled = :time, fulfilledAt = :now, classIdFulfilled = :classId, lastChecked = :now, updatedAt = :now",
+                ExpressionAttributeValues: {
+                  ":time": timeToBook,
+                  ":now": new Date().toISOString(),
+                  ":classId": String(classId),
+                },
+              })
             );
+
+            // Send SMS confirmation
+            if (user.enableTextNotifications && user.phoneNumber) {
+              await sendBookingNotification(user.phoneNumber, {
+                timeFulfilled: timeToBook,
+              });
+            }
           } else {
-            await makeReservation(
-              classId,
-              user.username,
-              decrypt(user.password)
-            );
-          }
+            // Notify-only mode: just send one SMS alert, don't book
+            if (appointment.lastNotifiedAt) {
+              console.log(`> notify-only: already notified, skipping SMS`);
+              continue;
+            }
 
-          // Update appointment as fulfilled
-          await docClient.send(
-            new UpdateCommand({
-              TableName: APPOINTMENTS_TABLE,
-              Key: {
-                userId: appointment.userId,
-                appointmentId: appointment.appointmentId,
-              },
-              UpdateExpression:
-                "SET timeFulfilled = :time, fulfilledAt = :now, classIdFulfilled = :classId, lastChecked = :now, updatedAt = :now",
-              ExpressionAttributeValues: {
-                ":time": timeToBook,
-                ":now": new Date().toISOString(),
-                ":classId": String(classId),
-              },
-            })
-          );
+            if (user.enableTextNotifications && user.phoneNumber) {
+              console.log(`> notify-only mode: spot found at ${timeToBook}, sending SMS`);
 
-          // Send SMS notification
-          if (user.enableTextNotifications && user.phoneNumber) {
-            await sendBookingNotification(user.phoneNumber, {
-              timeFulfilled: timeToBook,
-            });
+              await sendAvailabilityNotification(
+                user.phoneNumber,
+                { availableTime: timeToBook },
+                availableSpots
+              );
+
+              // Only throttle after actually sending
+              await docClient.send(
+                new UpdateCommand({
+                  TableName: APPOINTMENTS_TABLE,
+                  Key: {
+                    userId: appointment.userId,
+                    appointmentId: appointment.appointmentId,
+                  },
+                  UpdateExpression: "SET lastChecked = :now, updatedAt = :now, lastNotifiedAt = :now",
+                  ExpressionAttributeValues: {
+                    ":now": new Date().toISOString(),
+                  },
+                })
+              );
+            } else {
+              console.log(`> notify-only: spot found but user has no phone/notifications enabled, skipping SMS`);
+              await docClient.send(
+                new UpdateCommand({
+                  TableName: APPOINTMENTS_TABLE,
+                  Key: {
+                    userId: appointment.userId,
+                    appointmentId: appointment.appointmentId,
+                  },
+                  UpdateExpression: "SET lastChecked = :now, updatedAt = :now",
+                  ExpressionAttributeValues: {
+                    ":now": new Date().toISOString(),
+                  },
+                })
+              );
+            }
           }
         }
       } catch (e) {

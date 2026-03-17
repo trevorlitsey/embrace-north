@@ -11,12 +11,14 @@ const { docClient } = require("./dynamodb");
 const APPOINTMENTS_TABLE =
   process.env.APPOINTMENTS_TABLE || "EmbraceNorth-Appointments";
 
-const createAppointment = async ({ userId, appointmentId, times }) => {
+const createAppointment = async ({ userId, appointmentId, times, autoBook = true, minSpots = 1 }) => {
   const now = new Date().toISOString();
   const item = {
     userId,
     appointmentId,
     times,
+    autoBook,
+    minSpots,
     timeFulfilled: null,
     fulfilledAt: null,
     classIdFulfilled: null,

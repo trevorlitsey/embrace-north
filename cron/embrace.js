@@ -3,7 +3,7 @@ const chromium = require("@sparticuz/chromium");
 const axios = require("axios");
 const { DateTime } = require("luxon");
 
-const findOpenTime = async (times) => {
+const findOpenTime = async (times, minSpots = 1) => {
   const date = DateTime.fromISO(times[0])
     .setZone("America/Chicago")
     .toFormat("yyyy-MM-dd");
@@ -23,7 +23,7 @@ const findOpenTime = async (times) => {
   const classesWithOpenTimes = classesRes.data.results
     .filter(
       (c) =>
-        c.available_spot_count > 0 &&
+        c.available_spot_count >= minSpots &&
         times.some((t) => {
           return DateTime.fromISO(t).equals(
             DateTime.fromISO(c.start_datetime)
@@ -63,7 +63,7 @@ const findOpenTime = async (times) => {
     );
   }
 
-  return [classesWithOpenTimes[0].id, classesWithOpenTimes[0].start_datetime];
+  return [classesWithOpenTimes[0].id, classesWithOpenTimes[0].start_datetime, classesWithOpenTimes[0].available_spot_count];
 };
 
 const getUserAccessToken = async (username, password) => {
