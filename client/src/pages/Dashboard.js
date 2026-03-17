@@ -121,9 +121,18 @@ const Dashboard = () => {
                       </>
                     ) : null}
                   </>
+                ) : appointment.autoBook === false && appointment.lastNotifiedAt ? (
+                  <i>
+                    Texted{" "}
+                    {DateTime.fromISO(appointment.lastNotifiedAt)
+                      .setZone("America/Chicago")
+                      .toRelative()}
+                  </i>
                 ) : (
                   <i>
-                    No time booked yet.{" "}
+                    {appointment.autoBook === false
+                      ? "Waiting for open spots..."
+                      : "No time booked yet."}{" "}
                     {(() => {
                       const base = appointment.lastChecked
                         ? DateTime.fromISO(appointment.lastChecked)
