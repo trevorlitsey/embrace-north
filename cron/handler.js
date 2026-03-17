@@ -117,30 +117,45 @@ exports.handler = async () => {
               continue;
             }
 
-            console.log(`> notify-only mode: spot found at ${timeToBook}, sending SMS`);
-
             if (user.enableTextNotifications && user.phoneNumber) {
+              console.log(`> notify-only mode: spot found at ${timeToBook}, sending SMS`);
+
               await sendAvailabilityNotification(
                 user.phoneNumber,
                 { availableTime: timeToBook },
                 availableSpots
               );
-            }
 
-            // Update lastChecked so we don't spam every 5 minutes
-            await docClient.send(
-              new UpdateCommand({
-                TableName: APPOINTMENTS_TABLE,
-                Key: {
-                  userId: appointment.userId,
-                  appointmentId: appointment.appointmentId,
-                },
-                UpdateExpression: "SET lastChecked = :now, updatedAt = :now, lastNotifiedAt = :now",
-                ExpressionAttributeValues: {
-                  ":now": new Date().toISOString(),
-                },
-              })
-            );
+              // Only throttle after actually sending
+              await docClient.send(
+                new UpdateCommand({
+                  TableName: APPOINTMENTS_TABLE,
+                  Key: {
+                    userId: appointment.userId,
+                    appointmentId: appointment.appointmentId,
+                  },
+                  UpdateExpression: "SET lastChecked = :now, updatedAt = :now, lastNotifiedAt = :now",
+                  ExpressionAttributeValues: {
+                    ":now": new Date().toISOString(),
+                  },
+                })
+              );
+            } else {
+              console.log(`> notify-only: spot found but user has no phone/notifications enabled, skipping SMS`);
+              await docClient.send(
+                new UpdateCommand({
+                  TableName: APPOINTMENTS_TABLE,
+                  Key: {
+                    userId: appointment.userId,
+                    appointmentId: appointment.appointmentId,
+                  },
+                  UpdateExpression: "SET lastChecked = :now, updatedAt = :now",
+                  ExpressionAttributeValues: {
+                    ":now": new Date().toISOString(),
+                  },
+                })
+              );
+            }
           }
         }
       } catch (e) {
