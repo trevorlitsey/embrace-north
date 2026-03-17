@@ -39,19 +39,4 @@ const sendAvailabilityNotification = async (phoneNumber, appointment, availableS
   console.log(`> availability SMS sent to ${phoneNumber}`);
 };
 
-const sendWelcomeNotification = async (phoneNumber) => {
-  const client = twilio(
-    process.env.TWILIO_ACCOUNT_SID,
-    process.env.TWILIO_AUTH_TOKEN
-  );
-
-  await client.messages.create({
-    body: `You're all set! You'll get a text here when your Embrace North spots open up 🎉`,
-    from: process.env.TWILIO_PHONE_NUMBER,
-    to: `+1${phoneNumber}`,
-  });
-
-  console.log(`> Welcome SMS sent to ${phoneNumber}`);
-};
-
-module.exports = { sendBookingNotification, sendAvailabilityNotification, sendWelcomeNotification };
+module.exports = { sendBookingNotification, sendAvailabilityNotification };
