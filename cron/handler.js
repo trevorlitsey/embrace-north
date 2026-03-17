@@ -105,15 +105,9 @@ exports.handler = async () => {
               });
             }
           } else {
-            // Notify-only mode: just send an SMS alert, don't book
-            // Throttle: don't re-notify if we already sent one in the last 60 minutes
-            const lastNotified = appointment.lastNotifiedAt
-              ? new Date(appointment.lastNotifiedAt).getTime()
-              : 0;
-            const minutesSinceNotify = (Date.now() - lastNotified) / 1000 / 60;
-
-            if (minutesSinceNotify < 60) {
-              console.log(`> notify-only: spot found but already notified ${Math.round(minutesSinceNotify)}m ago, skipping SMS`);
+            // Notify-only mode: just send one SMS alert, don't book
+            if (appointment.lastNotifiedAt) {
+              console.log(`> notify-only: already notified, skipping SMS`);
               continue;
             }
 
