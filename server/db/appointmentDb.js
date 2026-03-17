@@ -4,7 +4,6 @@ const {
   QueryCommand,
   UpdateCommand,
   DeleteCommand,
-  ScanCommand,
 } = require("@aws-sdk/lib-dynamodb");
 const { docClient } = require("./dynamodb");
 
@@ -61,23 +60,6 @@ const getAppointmentsByUserId = async (userId) => {
   return result.Items || [];
 };
 
-const getAllPendingAppointments = async () => {
-  const now = new Date().toISOString();
-  const result = await docClient.send(
-    new ScanCommand({
-      TableName: APPOINTMENTS_TABLE,
-      FilterExpression: "attribute_not_exists(timeFulfilled) OR timeFulfilled = :null",
-      ExpressionAttributeValues: {
-        ":null": null,
-      },
-    })
-  );
-  // Filter client-side for appointments with at least one future time
-  return (result.Items || []).filter((item) =>
-    item.times.some((t) => t >= now)
-  );
-};
-
 const updateAppointment = async (userId, appointmentId, updates) => {
   const expressions = [];
   const names = {};
@@ -120,7 +102,6 @@ module.exports = {
   createAppointment,
   getAppointmentById,
   getAppointmentsByUserId,
-  getAllPendingAppointments,
   updateAppointment,
   deleteAppointment,
 };
