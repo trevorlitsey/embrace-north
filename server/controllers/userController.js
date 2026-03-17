@@ -8,6 +8,7 @@ const {
   updateUser,
 } = require("../db/userDb");
 const { getUserAccessToken } = require("../embrace");
+const { sendWelcomeNotification } = require("../../cron/twilio");
 
 // Generate JWT
 const generateToken = (userId) => {
@@ -111,7 +112,20 @@ const updateUserProfile = async (req, res) => {
         updates.enableTextNotifications = false;
       }
 
+      const previousPhoneNumber = user.phoneNumber;
       const updatedUser = await updateUser(req.user.userId, updates);
+
+      // Send welcome SMS if phone number is new or changed
+      if (
+        updates.phoneNumber &&
+        updates.phoneNumber !== previousPhoneNumber
+      ) {
+        try {
+          await sendWelcomeNotification(updates.phoneNumber);
+        } catch (smsError) {
+          console.error("Failed to send welcome SMS:", smsError.message);
+        }
+      }
 
       res.json({
         _id: updatedUser.userId,

@@ -12,7 +12,7 @@ const sendBookingNotification = async (phoneNumber, appointment) => {
     .toFormat("EEEE, MMMM d, yyyy 'at' h:mm a");
 
   await client.messages.create({
-    body: `ENWT: Your appointment has been successfully booked for ${formattedTime}. Use the Embrace North app to manage your booked appointments.`,
+    body: `Your Embrace North class is booked for ${formattedTime} 🎉 See you there!`,
     from: process.env.TWILIO_PHONE_NUMBER,
     to: `+1${phoneNumber}`,
   });
@@ -39,4 +39,19 @@ const sendAvailabilityNotification = async (phoneNumber, appointment, availableS
   console.log(`> availability SMS sent to ${phoneNumber}`);
 };
 
-module.exports = { sendBookingNotification, sendAvailabilityNotification };
+const sendWelcomeNotification = async (phoneNumber) => {
+  const client = twilio(
+    process.env.TWILIO_ACCOUNT_SID,
+    process.env.TWILIO_AUTH_TOKEN
+  );
+
+  await client.messages.create({
+    body: `You're all set! You'll get a text here when your Embrace North spots open up 🎉`,
+    from: process.env.TWILIO_PHONE_NUMBER,
+    to: `+1${phoneNumber}`,
+  });
+
+  console.log(`> Welcome SMS sent to ${phoneNumber}`);
+};
+
+module.exports = { sendBookingNotification, sendAvailabilityNotification, sendWelcomeNotification };
