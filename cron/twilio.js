@@ -31,7 +31,7 @@ const sendAvailabilityNotification = async (phoneNumber, appointment, availableS
     .toFormat("EEEE, MMMM d, yyyy 'at' h:mm a");
 
   await client.messages.create({
-    body: `ENWT: A spot is available at ${formattedTime} (${availableSpots} spot${availableSpots !== 1 ? "s" : ""} open). Open the app to book it.`,
+    body: `ENWT: A spot is available at ${formattedTime} (${availableSpots} spot${availableSpots !== 1 ? "s" : ""} open). Open the app to book it: https://embrace.trevorlitsey.com`,
     from: process.env.TWILIO_PHONE_NUMBER,
     to: `+1${phoneNumber}`,
   });
