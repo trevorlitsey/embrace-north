@@ -350,6 +350,11 @@ input[type="tel"]:focus {
   font-weight: 500;
 }
 
+.segment-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
 /* ── Narrow select ── */
 .select-narrow {
   width: auto;

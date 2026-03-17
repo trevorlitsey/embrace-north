@@ -1,11 +1,14 @@
 // File: src/pages/AppointmentForm.js
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 import api from "../utils/api";
 import options from "./options.json";
 import { DateTime } from "luxon";
 
 const AppointmentForm = () => {
+  const { user } = useAuth();
+  const hasPhone = !!(user?.phoneNumber);
   const [formData, setFormData] = useState({
     date: new Date().toISOString().slice(0, 10),
     times: [options[0].value],
@@ -216,7 +219,9 @@ const AppointmentForm = () => {
             <button
               type="button"
               className={`segment-btn${!formData.autoBook ? " active" : ""}`}
-              onClick={() => setFormData({ ...formData, autoBook: false })}
+              onClick={() => hasPhone && setFormData({ ...formData, autoBook: false })}
+              disabled={!hasPhone}
+              title={!hasPhone ? "Add a phone number in your profile to use this option" : undefined}
             >
               💬 Just text me that my spots are open
             </button>
