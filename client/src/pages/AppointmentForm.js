@@ -218,7 +218,7 @@ const AppointmentForm = () => {
               className={`segment-btn${!formData.autoBook ? " active" : ""}`}
               onClick={() => setFormData({ ...formData, autoBook: false })}
             >
-              📩 Just text me that my spots are open
+              💬 Just text me that my spots are open
             </button>
           </div>
         </div>
