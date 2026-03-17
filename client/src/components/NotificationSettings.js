@@ -83,8 +83,7 @@ const NotificationSettings = ({ user, updateProfile }) => {
             </label>
           </div>
           <small className="form-text text-muted">
-            You will receive a text message when any of your appointments are
-            successfully booked.
+            Enable text notifications to receive alerts about your appointments.
           </small>
         </div>
 
