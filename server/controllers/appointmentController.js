@@ -91,9 +91,19 @@ const updateAppointmentHandler = async (req, res) => {
       const updates = {};
       if (req.body.times) {
         updates.times = req.body.times.sort();
+        // Reset fulfillment/notification state when times change
+        updates.timeFulfilled = null;
+        updates.fulfilledAt = null;
+        updates.classIdFulfilled = null;
+        updates.lastNotifiedAt = null;
+        updates.pollingErrors = [];
       }
       if (req.body.autoBook !== undefined) {
         updates.autoBook = req.body.autoBook;
+        // Reset notification state if switching to notify-only mode
+        if (req.body.autoBook === false) {
+          updates.lastNotifiedAt = null;
+        }
       }
       if (req.body.minSpots !== undefined) {
         updates.minSpots = parseInt(req.body.minSpots, 10) || 1;
