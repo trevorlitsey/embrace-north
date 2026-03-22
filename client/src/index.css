@@ -318,29 +318,33 @@ input[type="tel"]:focus {
 
 /* ── Segmented control (booking mode toggle) ── */
 .segment-control {
-  display: inline-flex;
+  display: flex;
+  flex-direction: column;
   border: 1px solid #ddd;
   border-radius: 6px;
   overflow: hidden;
   margin-top: 0.25rem;
+  width: 100%;
 }
 
 .segment-btn {
-  padding: 0.5rem 1.1rem;
+  padding: 0.85rem 1.1rem;
   background: #f8f9fa;
   border: none;
-  border-right: 1px solid #ddd;
-  font-size: 0.95rem;
+  border-bottom: 1px solid #ddd;
+  font-size: 1rem;
   cursor: pointer;
   color: #555;
   transition: background 0.15s, color 0.15s;
+  text-align: left;
+  min-height: 52px;
 }
 
 .segment-btn:last-child {
-  border-right: none;
+  border-bottom: none;
 }
 
-.segment-btn:hover {
+.segment-btn:hover:not(:disabled) {
   background: #e9ecef;
 }
 
@@ -351,8 +355,20 @@ input[type="tel"]:focus {
 }
 
 .segment-btn:disabled {
-  opacity: 0.45;
+  opacity: 0.55;
   cursor: not-allowed;
+}
+
+.segment-btn-hint {
+  display: block;
+  font-size: 0.78rem;
+  margin-top: 0.2rem;
+  color: #888;
+  font-weight: 400;
+}
+
+.segment-btn.active .segment-btn-hint {
+  color: rgba(255,255,255,0.8);
 }
 
 /* ── Narrow select ── */

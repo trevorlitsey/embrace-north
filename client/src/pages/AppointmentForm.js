@@ -221,9 +221,11 @@ const AppointmentForm = () => {
               className={`segment-btn${!formData.autoBook ? " active" : ""}`}
               onClick={() => hasPhone && setFormData({ ...formData, autoBook: false })}
               disabled={!hasPhone}
-              title={!hasPhone ? "Add a phone number in your profile to use this option" : undefined}
             >
               💬 Just text me that my spots are open
+              {!hasPhone && (
+                <span className="segment-btn-hint">Add a phone number in your profile to enable this</span>
+              )}
             </button>
           </div>
         </div>
