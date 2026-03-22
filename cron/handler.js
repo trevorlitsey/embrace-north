@@ -47,7 +47,7 @@ exports.handler = async () => {
         const minSpots = appointment.minSpots || 1;
         const autoBook = appointment.autoBook !== false; // default true
         const result = await findOpenTime(appointment.times, minSpots);
-        const [classId, timeToBook, availableSpots] = result;
+        const [classId, timeToBook, availableSpots, groupedTimes] = result;
 
         if (classId) {
           // Get user credentials
@@ -117,7 +117,8 @@ exports.handler = async () => {
               await sendAvailabilityNotification(
                 user.phoneNumber,
                 { availableTime: timeToBook },
-                availableSpots
+                availableSpots,
+                groupedTimes
               );
 
               // Only throttle after actually sending

@@ -3,6 +3,8 @@ const chromium = require("@sparticuz/chromium");
 const axios = require("axios");
 const { DateTime } = require("luxon");
 
+const GROUPED_WINDOW_MINUTES = 15;
+
 const findOpenTime = async (times, minSpots = 1) => {
   const date = DateTime.fromISO(times[0])
     .setZone("America/Chicago")
@@ -14,56 +16,72 @@ const findOpenTime = async (times, minSpots = 1) => {
       .setZone("America/Chicago")
       .toFormat("yyyy-MM-dd h:mm a")}`
   );
-  console.log(`> checking for open times for ${date}`);
+  console.log(`> checking for open times for ${date} (minSpots=${minSpots})`);
 
   const classesRes = await axios.get(
     `https://embracenorth.marianatek.com/api/customer/v1/classes?min_start_date=${date}&max_start_date=${date}&page_size=500&region=48541`
   );
 
-  const classesWithOpenTimes = classesRes.data.results
+  // Classes that match requested times and have at least 1 open spot
+  const matchingClasses = classesRes.data.results
     .filter(
       (c) =>
-        c.available_spot_count >= minSpots &&
-        times.some((t) => {
-          return DateTime.fromISO(t).equals(
-            DateTime.fromISO(c.start_datetime)
-          );
-        })
+        c.available_spot_count >= 1 &&
+        times.some((t) => DateTime.fromISO(t).equals(DateTime.fromISO(c.start_datetime)))
     )
-    .sort(
-      (a, b) =>
-        times.findIndex((t) =>
-          DateTime.fromISO(t).equals(DateTime.fromISO(a.start_datetime))
-        ) -
-        times.findIndex((t) =>
-          DateTime.fromISO(t).equals(DateTime.fromISO(b.start_datetime))
-        )
+    .sort((a, b) =>
+      DateTime.fromISO(a.start_datetime) - DateTime.fromISO(b.start_datetime)
     );
 
-  if (classesWithOpenTimes.length === 0) {
+  // First: try to find a single class with enough spots (original behavior)
+  const singleMatch = matchingClasses.find((c) => c.available_spot_count >= minSpots);
+
+  if (singleMatch) {
     console.log(
-      `> no open times found for ${times
-        .map((t) =>
-          DateTime.fromISO(t)
-            .setZone("America/Chicago")
-            .toFormat("yyyy-MM-dd h:mm a")
-        )
-        .join(", ")}.`
+      `> single match found: ${DateTime.fromISO(singleMatch.start_datetime)
+        .setZone("America/Chicago")
+        .toFormat("h:mm a")} (${singleMatch.available_spot_count} spots)`
     );
-    return [];
-  } else {
-    console.log(
-      `> open times found: ${classesWithOpenTimes
-        .map((c) =>
-          DateTime.fromISO(c.start_datetime)
-            .setZone("America/Chicago")
-            .toFormat("yyyy-MM-dd h:mm a")
-        )
-        .join(", ")}`
-    );
+    return [singleMatch.id, singleMatch.start_datetime, singleMatch.available_spot_count, null];
   }
 
-  return [classesWithOpenTimes[0].id, classesWithOpenTimes[0].start_datetime, classesWithOpenTimes[0].available_spot_count];
+  // Second: if minSpots > 1, check if multiple classes within GROUPED_WINDOW_MINUTES
+  // have enough combined spots
+  if (minSpots > 1 && matchingClasses.length >= 2) {
+    for (let i = 0; i < matchingClasses.length; i++) {
+      const anchor = DateTime.fromISO(matchingClasses[i].start_datetime);
+      const group = matchingClasses.filter((c) => {
+        const diff = Math.abs(
+          DateTime.fromISO(c.start_datetime).diff(anchor, "minutes").minutes
+        );
+        return diff <= GROUPED_WINDOW_MINUTES;
+      });
+
+      const totalSpots = group.reduce((sum, c) => sum + c.available_spot_count, 0);
+
+      if (totalSpots >= minSpots) {
+        const groupedTimes = group.map((c) => c.start_datetime);
+        console.log(
+          `> grouped match found: ${groupedTimes
+            .map((t) => DateTime.fromISO(t).setZone("America/Chicago").toFormat("h:mm a"))
+            .join(" + ")} (${totalSpots} total spots across ${group.length} classes)`
+        );
+        // Return the earliest class in the group as the primary
+        return [group[0].id, group[0].start_datetime, totalSpots, groupedTimes];
+      }
+    }
+  }
+
+  console.log(
+    `> no open times found for ${times
+      .map((t) =>
+        DateTime.fromISO(t)
+          .setZone("America/Chicago")
+          .toFormat("yyyy-MM-dd h:mm a")
+      )
+      .join(", ")}.`
+  );
+  return [];
 };
 
 const getUserAccessToken = async (username, password) => {
